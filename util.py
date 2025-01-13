@@ -20,8 +20,6 @@ import gl
 import model
 #######
 # some 'constants' that can be changed if push comes to shove !
-DEFAULT_FILE="/test.embl"
-# DEFAULT_FILE=None
 # some initial values that might remain constant
 canvasHorizontalMargin = 0 # blank space from the left edge of canvas
 #canvasVerticalMargin = 30
@@ -31,41 +29,40 @@ VerticalPixelsMargin=2
 VerticalSequenceSpacing=VerticalPixelsMargin+gl.fontSize+5 # blank space between 2 sequences
 COLORED_BASES=True
 
-
 def canvasDraw( canvas:Canvas)->int:
-    baseRectangleSymbolXPixelSize=calculateBaseRectangleSymbolXPixelSize(gl.fontSize) #in pixels
-    baseRectangleSymbolYPixelSize=calculateBaseRectangleSymbolYPixelSize(gl.fontSize) #in pixels
-    yPos = VerticalSequenceSpacing  # y is 0 at top and increases downwards
-    # Clear any previous drawings
-    canvas.delete("all")
-    sequenceWidth=0
-    for sequenceRecord in model.sequenceRecordList:
-        newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize)#, True)
-        if newSequenceWidth>sequenceWidth:
-            sequenceWidth=newSequenceWidth
-        yPos=yFinal
-    #
-    # Adjust the scrollable region based on the length of the string
-    canvas.config(scrollregion=(0, 0, sequenceWidth,100))  # Set the scrollable area
-    return 2*canvasHorizontalMargin+sequenceWidth
+	gl.prefs.refreshFastColorCache()
+	baseRectangleSymbolXPixelSize=calculateBaseRectangleSymbolXPixelSize(gl.fontSize) #in pixels
+	baseRectangleSymbolYPixelSize=calculateBaseRectangleSymbolYPixelSize(gl.fontSize) #in pixels
+	yPos = VerticalSequenceSpacing  # y is 0 at top and increases downwards
+	# Clear any previous drawings
+	canvas.delete("all")
+	sequenceWidth=0
+	for sequenceRecord in model.sequenceRecordList:
+		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize)#, True)
+		if newSequenceWidth>sequenceWidth:
+			sequenceWidth=newSequenceWidth
+		yPos=yFinal
+	#
+	# Adjust the scrollable region based on the length of the string
+	canvas.config(scrollregion=(0, 0, sequenceWidth,100))  # Set the scrollable area
+	return 2*canvasHorizontalMargin+sequenceWidth
 
 
 def loadFile()->list[SeqRecord]:	
-    """Prompts the user to load a .embl file, reads its contents, and draws the string on the canvas."""
-    if DEFAULT_FILE is None:
-        filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
-    else:
-        filePath=str(Path(__file__).resolve().parent)+DEFAULT_FILE
-    if filePath:
-        try:
-            secRecList:list[SeqRecord]=loadEmblSequences(filePath)
-            print(secRecList,secRecList.__class__)                
-            model.loadedFileName=filePath
-            return secRecList
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
-    else:
-            messagebox.showwarning("No file", "Please select a file")
+	if gl.prefs.get_preference_value("defaultTestFileValue") is None:
+		filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
+	else:
+		filePath=str(Path(__file__).resolve().parent)+gl.prefs.get_preference_value("defaultTestFileValue")
+	if filePath:
+		try:
+			secRecList:list[SeqRecord]=loadEmblSequences(filePath)
+			print(secRecList,secRecList.__class__)                
+			model.loadedFileName=filePath
+			return secRecList
+		except Exception as e:
+			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
+	else:
+			messagebox.showwarning("No file", "Please select a file")
 
 def loadModel():	
 	seqRecList:list[SeqRecord]= loadFile()
@@ -175,7 +172,10 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,bas
 	print("draw sec:",dnaSequenceStr)
 	index=0
 	for letter in dnaSequenceStr:
-		drawBase(letter,canvas, x, VerticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,gl.base3Colors[letter], rotated, isIndexNonOverlapping(index, nonOverlappingRegions))
+		print("drawStrand A color",gl.prefs.get_preference_value("A"))	
+		print("drawStrand A color from cache",gl.prefs.getColorFromColorCache(letter))
+		print("letter",letter)
+		drawBase(letter,canvas, x, VerticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,gl.prefs.getColorFromColorCache(letter), rotated, isIndexNonOverlapping(index, nonOverlappingRegions))
 		index+=1
 		x += baseRectangleSymbolXPixelSize # Move to the next position
 	#draw features

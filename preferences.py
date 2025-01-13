@@ -1,6 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox, colorchooser
+import gl
+
 # all what we need to handle preferences
+
+
 class Preference:
     def __init__(self, name, value_type, default_value, string_conversion_method, description=""):
         self.name = name
@@ -28,21 +32,33 @@ class Preference:
         return str(self.value)
 
 class Preferences:
-    def __init__(self, root):
+    def __init__(self, root, list_of_preferences=None):
         self.root = root
-        self.preferences = [
-            Preference("defaultTestFileValue", str, "/test.embl", str, "Path to the default file"),
-            Preference("canvasHorizontalMargin", int, 0, int, "Horizontal margin for the canvas"),
-            Preference("FONT", str, "Arial", str, "Font type for the canvas"),
-            Preference("horizontalPixelsMargin", int, 2, int, "Horizontal pixel margin for layout"),
-            Preference("VerticalPixelsMargin", int, 2, int, "Vertical pixel margin for layout"),
-            Preference("VerticalSequenceSpacing", int, 10, int, "Vertical sequence spacing (default 10)"),
-            Preference("coloredBases", bool, True, lambda x: x.strip().lower() == 'true' if isinstance(x, str) else x, "Enable or disable colored bases in the sequence"),
-            Preference("A", str, "cyan", str, "Color for Adenine (A)"),
-            Preference("T", str, "gold2", str, "Color for Thymine (T)"),
-            Preference("C", str, "red", str, "Color for Cytosine (C)"),
-            Preference("G", str, "lime green", str, "Color for Guanine (G)")
-        ]
+        self.preferences= [
+                Preference("defaultTestFileValue", str, "/test.embl", str, "Path to the default file"),
+                Preference("canvasHorizontalMargin", int, 0, int, "Horizontal margin for the canvas"),
+                Preference("FONT", str, "Arial", str, "Font type for the canvas"),
+                Preference("horizontalPixelsMargin", int, 2, int, "Horizontal pixel margin for layout"),
+                Preference("VerticalPixelsMargin", int, 2, int, "Vertical pixel margin for layout"),
+                Preference("VerticalSequenceSpacing", int, 10, int, "Vertical sequence spacing (default 10)"),
+                Preference("coloredBases", bool, True, lambda x: x.strip().lower() == 'true' if isinstance(x, str) else x, "Enable or disable colored bases in the sequence"),
+                Preference("A", str, "cyan", str, "Color for Adenine (A)"),
+                Preference("T", str, "gold2", str, "Color for Thymine (T)"),
+                Preference("C", str, "red", str, "Color for Cytosine (C)"),
+                Preference("G", str, "lime green", str, "Color for Guanine (G)")
+            ]        
+        # preload the colors in a cheaper to access data structure
+        self.baseColors={}
+        self.refreshFastColorCache()
+
+    def refreshFastColorCache(self):
+        self.baseColors['A'] = self.get_preference_value("A")
+        self.baseColors['T'] = self.get_preference_value("T")
+        self.baseColors['G'] = self.get_preference_value("G")
+        self.baseColors['C'] = self.get_preference_value("C")
+
+    def getColorFromColorCache(self, letter):
+        return self.baseColors[letter]
 
     def open_preferences_popup(self):
         def on_select(event):
@@ -106,6 +122,7 @@ class Preferences:
             # Do not destroy popup immediately; keep it open and modal
             popup.grab_set()  # Reapply grab_set to ensure it remains modal
             popup.destroy()
+            self.preferences.refreshFastColorCache()
             self.preferencesPopup.grab_set() # it seems to have amnesia and forgets it is modal
 
         def reset_to_default():
@@ -154,11 +171,13 @@ class Preferences:
 def main():
     root = tk.Tk()
     root.title("Preferences App")
-    preferences = Preferences(root)
+
+    preferences=Preferences(root, gl.prefs)
     open_button = tk.Button(root, text="Open Preferences", command=preferences.open_preferences_popup)
     print(preferences.get_preference_value("defaultTestFileValue"))
     open_button.pack(pady=20)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

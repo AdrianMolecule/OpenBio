@@ -1,5 +1,6 @@
 import tkinter as tk
 from util import *
+from preferences import Preferences
 
 class UiApp:
     def __init__(self, root):
@@ -9,6 +10,7 @@ class UiApp:
         screen_height = int(root.winfo_screenheight()/3)
         self.root.geometry(f"{screen_width}x{screen_height}+0+0")
         # Create the canvas with a horizontal scrollbar
+        gl.prefs=Preferences(self.root, gl.prefs)
         self.createCanvasWithScrollbar()
         self.createButtonBars()
         self.createMenu()
@@ -76,9 +78,15 @@ class UiApp:
         exitMenu = Menu(menuBar, tearoff=0)
         exitMenu.add_command(label="Exit", command=self.exitApplication)
         menuBar.add_cascade(label="Exit", menu=exitMenu)
+        # menu: Preferences
+        preferencesMenu = Menu(menuBar, tearoff=0)
+        preferencesMenu.add_command(label="Preferences", command=self.updatePreferences)
+        menuBar.add_cascade(label="Preferences", menu=preferencesMenu)
         # Configuring the root window to use the menu
         root.config(menu=menuBar)   
 
+    def updatePreferences(self):
+        gl.prefs.open_preferences_popup()
 
     def loadFileCommandHandler(self)->Seq:
         loadModel()

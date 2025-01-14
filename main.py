@@ -3,6 +3,7 @@ from util import *
 from preferences import Preferences
 
 class UiApp:
+
     def __init__(self, root):
         self.root = root
         self.root.title("OpenBio")
@@ -10,8 +11,8 @@ class UiApp:
         screen_height = int(root.winfo_screenheight()/3)
         self.root.geometry(f"{screen_width}x{screen_height}+0+0")
         # Create the canvas with a horizontal scrollbar
-        gl.prefs=Preferences(self.root, gl.prefs)
         self.createCanvasWithScrollbar()
+        gl.prefs=Preferences(self.root, self.refresh)
         self.createButtonBars()
         self.createMenu()
 
@@ -19,7 +20,6 @@ class UiApp:
         # Create a frame to hold the canvas and the scrollbar
         canvasFrame = tk.Frame(self.root)
         canvasFrame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-
         # Create a canvas
         self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=400)
         # Create a horizontal scrollbar
@@ -57,9 +57,8 @@ class UiApp:
         self.rightButtonBar = tk.Frame(self.root)
         self.rightButtonBar.grid(row=0, column=1, padx=5, pady=5, sticky="ns")
 
-        verticalButtons = ["Button A", "Button B", "Button C"]
-        for i, button in enumerate(verticalButtons):
-            tk.Button(self.rightButtonBar, text=button).grid(row=i, column=0, pady=5)
+        buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=self.refresh)
+        buttonRefresh.grid(row=1, column=0, pady=5)
 
         # Configure grid to allow resizing
         self.root.grid_rowconfigure(0, weight=1)
@@ -86,23 +85,30 @@ class UiApp:
         root.config(menu=menuBar)   
 
     def updatePreferences(self):
-        gl.prefs.open_preferences_popup()
+        gl.prefs.open_preferences_popup()       
 
     def loadFileCommandHandler(self)->Seq:
         loadModel()
         self.root.title("OpenBio "+model.loadedFileName)
-        canvasDraw(self.canvas) 
+        drawCanvas(self.canvas) 
+
+    def refresh(self):
+        print("in refresh",self.canvas)
+        drawCanvas(self.canvas) 
 
     def canvasDrawCircle(self):
         self.canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
 
     def canvasZoom(self,zoomin):# 1 for  zoom In or bigger
-        if zoomin!=True and gl.fontSize>3: # ZOOM OUT no to negative font sizes
-                gl.fontSize=gl.fontSize-1    
-                canvasDraw(self.canvas)
+        name="fontSize"
+        oldSize=gl.prefs.get_preference_value(name)
+        if zoomin!=True and oldSize>3: # ZOOM OUT no to negative font sizes
+                gl.prefs.get_preference_value(name)
+                gl.prefs.set_preference_value(name, oldSize-1)
+                drawCanvas(self.canvas)
         else:   
-            gl.fontSize=gl.fontSize+1            
-            canvasDraw(self.canvas)
+            gl.prefs.set_preference_value(name,oldSize+1 )           
+            drawCanvas(self.canvas)
 
 
 if __name__ == "__main__":
@@ -111,5 +117,5 @@ if __name__ == "__main__":
     app = UiApp(root)
     loadModel()
     app.root.title("OpenBio "+model.loadedFileName)
-    canvasDraw(app.canvas)
+    drawCanvas(app.canvas)
     root.mainloop()

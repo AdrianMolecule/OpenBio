@@ -23,22 +23,22 @@ import model
 # some initial values that might remain constant
 canvasHorizontalMargin = 0 # blank space from the left edge of canvas
 #canvasVerticalMargin = 30
-FONT="Arial"
 horizontalPixelsMargin=2 # total room between the base letter and it's holding box
-VerticalPixelsMargin=2
-VerticalSequenceSpacing=VerticalPixelsMargin+gl.fontSize+5 # blank space between 2 sequences
-COLORED_BASES=True
 
-def canvasDraw( canvas:Canvas)->int:
-	gl.prefs.refreshFastColorCache()
-	baseRectangleSymbolXPixelSize=calculateBaseRectangleSymbolXPixelSize(gl.fontSize) #in pixels
-	baseRectangleSymbolYPixelSize=calculateBaseRectangleSymbolYPixelSize(gl.fontSize) #in pixels
-	yPos = VerticalSequenceSpacing  # y is 0 at top and increases downwards
+def drawCanvas( canvas:Canvas)->int:
+	fontSize=gl.prefs.get_preference_value("fontSize")
+	verticalSequenceSpacing=gl.prefs.get_preference_value("verticalSequenceSpacing")+5 # blank space between 2 sequences
+	font=(gl.prefs.get_preference_value("fontName"), gl.prefs.get_preference_value("fontSize"))	
+	gl.prefs.dump()
+	coloredBases=gl.prefs.get_preference_value("coloredBases")
+	baseRectangleSymbolXPixelSize=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
+	baseRectangleSymbolYPixelSize=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
+	yPos = verticalSequenceSpacing  # y is 0 at top and increases downwards
 	# Clear any previous drawings
 	canvas.delete("all")
 	sequenceWidth=0
 	for sequenceRecord in model.sequenceRecordList:
-		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize)#, True)
+		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font,coloredBases)#, True)
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
@@ -88,19 +88,19 @@ def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
         nonOverlappingRegions.append((currentEnd, stringLength))    
     return nonOverlappingRegions
 
-def isIndexNonOverlapping( index, nonOverlappingRegions): 
+def isIndexOverlapping( index, nonOverlappingRegions): 
 	return any(start <= index < end for start, end in nonOverlappingRegions)		
 
-def canvasDrawCircle(canvas:Canvas):
+def drawCanvasCircle(canvas:Canvas):
         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
 
 def canvasZoom(zoomin):# 1 for  zoom In or bigger
-    if zoomin!=True and gl.fontSize>3: # ZOOM OUT no to negative font sizes
-            gl.fontSize=gl.fontSize-1    
-            canvasDraw()
+    if zoomin!=True and gl.prefs.get_preference_value("fontSize")>3: # ZOOM OUT no to negative font sizes
+            gl.prefs.setFontSize(gl.prefs.get_preference_value("fontSize")-1)    
+            drawCanvas()
     else:   
-        gl.fontSize=gl.fontSize+1            
-        canvasDraw()
+        gl.prefs.setFontSize(gl.prefs.get_preference_value("fontSize")+1 )          
+        drawCanvas()
 
 def calculateBaseRectangleSymbolXPixelSize(fontSize):
 	return fontSize+horizontalPixelsMargin
@@ -142,21 +142,21 @@ def checkTranslation( inSeq, outSeq):
 		successFlag=False
 	return successFlag
 
-def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, rotated=None):
+def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rotated=None):
 	"""Draws a sequence record on the canvas"""
 	ds=True
-	x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize)	
-	yFin=yStart+VerticalSequenceSpacing+baseRectangleSymbolYPixelSize
+	x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font, coloredBases)	
+	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	if ds:
-		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*VerticalSequenceSpacing,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, rotated=True)
-		yFin=yFin+VerticalSequenceSpacing+baseRectangleSymbolYPixelSize
+		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rotated=True)
+		yFin=yFin+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	return  x,yFin
 
-def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, rotated=None):
+def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, 
+			   font, coloredBases, rotated=None):
 	"""Draws a sequence record on the canvas"""
 	x=xStart
 	seq:Seq=sequenceRecord._seq
-
 	if rotated:
 		dnaSequenceStr=seqToString(seq.complement())
 	else:
@@ -167,15 +167,13 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,bas
 		if((feature.location.strand==1 and rotated==None) or (feature.location.strand==-1 and rotated==True)):
 			print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
 			loc:Location=feature.location
-			topY=VerticalSequenceSpacing+yStart
+			topY=verticalSequenceSpacing+yStart
 			print("Location:", loc.start, loc.end, loc.strand)
-	print("draw sec:",dnaSequenceStr)
+	# print("draw sec:",dnaSequenceStr)
 	index=0
 	for letter in dnaSequenceStr:
-		print("drawStrand A color",gl.prefs.get_preference_value("A"))	
-		print("drawStrand A color from cache",gl.prefs.getColorFromColorCache(letter))
-		print("letter",letter)
-		drawBase(letter,canvas, x, VerticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,gl.prefs.getColorFromColorCache(letter), rotated, isIndexNonOverlapping(index, nonOverlappingRegions))
+		drawBase(letter,canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize,
+		    baseRectangleSymbolYPixelSize,gl.prefs.get_preference_value(letter), font, coloredBases, isIndexOverlapping(index, nonOverlappingRegions), rotated)
 		index+=1
 		x += baseRectangleSymbolXPixelSize # Move to the next position
 	#draw features
@@ -183,61 +181,58 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,bas
 		if((feature.location.strand==1 and rotated==None) or (feature.location.strand==-1 and rotated==True)):
 			print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
 			loc:Location=feature.location
-			topY=VerticalSequenceSpacing+yStart
+			topY=verticalSequenceSpacing+yStart
 			#labelId=canvas.create_rectangle( xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, xStart+baseRectangleSymbolXPixelSize*loc.end,topY+ 2*baseRectangleSymbolYPixelSize , fill="white", outline="black" )
 			# Get the width of the second string
 			# bbox = canvas.bbox(labelId)  # bbox returns (x1, y1, x2, y2)
 			# width = bbox[2] - bbox[0]  # The width is the difference between x2 and x1
 			print("Location:", loc.start, loc.end, loc.strand)
-			drawTextInRectangle(feature.qualifiers.get("label")[0],canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white', loc.end-loc.start)
+			drawTextInRectangle(feature.qualifiers.get("label")[0],canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white',loc.end-loc.start, font, )
 	return  x
 
-def drawTextInRectangle(tex:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, length,rotated=None):
-	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
+def drawTextInRectangle(tex:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, length,font,rotated=None):
+	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=tex, font=(FONT, gl.fontSize), fill="black", angle=180)	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black", angle=180)	
 	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=tex, font=(FONT, gl.fontSize), fill="black")	
-	# upside_down_text = tk.Text(canvas, width=gl.fontSize, height=1 , wrap=tk.WORD, bd=1, relief="solid", highlightbackground="red",font=(FONT, gl.fontSize), padx=0, pady=-3) # height is the number of lines
+		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black")	
+	# upside_down_text = tk.Text(canvas, width=gl.fontSize, height=1 , wrap=tk.WORD, bd=1, relief="solid", highlightbackground="red",font, padx=0, pady=-3) # height is the number of lines
 	# upside_down_text.insert(tk.END, tex)  # Insert the 
 	# textpushDown=baseRectangleSymbolYPixelSize+10
 	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
 	
 # Define functions to draw each DNA base x,y relative from upper left corner
-def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, rotated=None, isIndexNonOverlapping=None):
-	if COLORED_BASES==False:
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill="white", outline="black" )
-	else:		
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("grey" if isIndexNonOverlapping else col), outline="black" )
-
+def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, coloredBases, isIndexOverlapping=None, rotated=None):
+	if coloredBases==False:
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("grey" if isIndexOverlapping else "white"), outline="black" )
+	else:			 #colored bases
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("grey" if isIndexOverlapping else color), outline="black" )
+	# 
 	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=(FONT, gl.fontSize), fill="black", angle=180)	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
 	else:
-		if isIndexNonOverlapping:
-			canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=(FONT, gl.fontSize), fill="black")
-		else:
-			canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=(FONT, gl.fontSize), fill="grey")	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
 
 
 # Define functions to draw each DNA base x,y relative from upper left corner
-def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, length,rotated=None):
+def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, length,rotated=None):
 	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
 	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=(FONT, gl.fontSize), fill="black", angle=180)	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black", angle=180)	
 	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=(FONT, gl.fontSize), fill="black")	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black")	
 
 
 # Define functions to draw each DNA base x,y relative from upper left corner
-def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, rotated=None):
-	if COLORED_BASES==False:
+def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, coloredBases, rotated=None):
+	if coloredBases==False:
 		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill="white", outline="black" )
 	else:
 		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
 	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=(FONT, gl.fontSize), fill="black", angle=180)	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
 	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=(FONT, gl.fontSize), fill="black")	
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")	
 
 
 

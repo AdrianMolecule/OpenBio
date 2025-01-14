@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, colorchooser
-import gl
+
 
 # all what we need to handle preferences
 

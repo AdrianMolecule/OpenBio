@@ -6,13 +6,19 @@
     "configurations": [        
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": false,
-            "purpose": ["debug-in-terminal"] // added by adrian and miraculosly now I can step in the libraries. I also set justMyCode to false above in in user and workspace!!
-            #https://stackoverflow.com/questions/53594900/visual-studio-code-python-debugging-step-into-the-code-of-external-functions
-        }
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Brick START",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
     ]
 }

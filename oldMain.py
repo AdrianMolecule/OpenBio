@@ -24,8 +24,9 @@ def loadFileCommandHandler()->Seq:
 
 def loadFile()->list[SeqRecord]:
     """Prompts the user to load a .embl file, reads its contents, and draws the string on the canvas."""
-    if DEFAULT_FILE is None:
-        filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
+    defaultTestFileValue:int=gl.prefs.get_preference_value(preference_name="defaultTestFileValue") 
+    if defaultTestFileValue is None or defaultTestFileValue=="":
+        filePath: str = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
     else:
         filePath=str(Path(__file__).resolve().parent)+DEFAULT_FILE
     if filePath:

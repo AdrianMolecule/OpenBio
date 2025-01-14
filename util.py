@@ -12,7 +12,6 @@ from PIL import ImageGrab
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from Bio import SeqIO
-from Bio import Restriction
 from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
 # from upsideDownText import UpsideDownText
 # mine
@@ -26,14 +25,14 @@ canvasHorizontalMargin = 0 # blank space from the left edge of canvas
 horizontalPixelsMargin=2 # total room between the base letter and it's holding box
 
 def drawCanvas( canvas:Canvas)->int:
-	fontSize=gl.prefs.get_preference_value("fontSize")
-	verticalSequenceSpacing=gl.prefs.get_preference_value("verticalSequenceSpacing")+5 # blank space between 2 sequences
-	font=(gl.prefs.get_preference_value("fontName"), gl.prefs.get_preference_value("fontSize"))	
+	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
+	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
 	gl.prefs.dump()
-	coloredBases=gl.prefs.get_preference_value("coloredBases")
-	baseRectangleSymbolXPixelSize=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
-	baseRectangleSymbolYPixelSize=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
-	yPos = verticalSequenceSpacing  # y is 0 at top and increases downwards
+	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
+	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
+	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
+	yPos:int = verticalSequenceSpacing  # y is 0 at top and increases downwards
 	# Clear any previous drawings
 	canvas.delete("all")
 	sequenceWidth=0
@@ -49,7 +48,8 @@ def drawCanvas( canvas:Canvas)->int:
 
 
 def loadFile()->list[SeqRecord]:	
-	if gl.prefs.get_preference_value("defaultTestFileValue") is None:
+	defaultTestFileValue:int=gl.prefs.get_preference_value(preference_name="defaultTestFileValue") 
+	if defaultTestFileValue is None or defaultTestFileValue=="":	
 		filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
 	else:
 		filePath=str(Path(__file__).resolve().parent)+gl.prefs.get_preference_value("defaultTestFileValue")
@@ -69,20 +69,20 @@ def loadModel():
 	print ("New load of model", seqRecList )
 	model.sequenceRecordList=seqRecList
 	model.dumpModel("in main")
-	model.appendSequenceRecord(SeqRecord(Seq("GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
+	model.appendSequenceRecord(newSequenceRecord=SeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
 def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
     # Initialize an empty list to store non-overlapping regions
     nonOverlappingRegions:list[tuple[int,int]] = []
     # Assume that the string starts from index 0
     currentEnd = 0
-    stringLength = len(longString)
+    stringLength: int = len(longString)
     for start, end in locations:
         # If there is a gap between the current end and the start of the next substring, add the gap as a region
         if start > currentEnd:
             nonOverlappingRegions.append((currentEnd, start))
         # Update the currentEnd to be the maximum of the currentEnd and the current substring's end
-        currentEnd = max(currentEnd, end)
+        currentEnd: int = max(currentEnd, end)
     # If there's any remaining region after the last substring, add it
     if currentEnd < stringLength:
         nonOverlappingRegions.append((currentEnd, stringLength))    
@@ -164,10 +164,10 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,bas
 	nonOverlappingRegions:list[tuple[int,int]]=findNonOverlappingRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in sequenceRecord.features])
 	print("Non overlapping regions:", nonOverlappingRegions)
 	for feature in sequenceRecord.features:
-		if((feature.location.strand==1 and rotated==None) or (feature.location.strand==-1 and rotated==True)):
+		if((feature.location.strand==1 and rotated is None) or (feature.location.strand==-1 and rotated==True)):
 			print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
 			loc:Location=feature.location
-			topY=verticalSequenceSpacing+yStart
+			topY:int=verticalSequenceSpacing+yStart
 			print("Location:", loc.start, loc.end, loc.strand)
 	# print("draw sec:",dnaSequenceStr)
 	index=0
@@ -178,10 +178,10 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,bas
 		x += baseRectangleSymbolXPixelSize # Move to the next position
 	#draw features
 	for feature in sequenceRecord.features:
-		if((feature.location.strand==1 and rotated==None) or (feature.location.strand==-1 and rotated==True)):
+		if((feature.location.strand==1 and rotated is None) or (feature.location.strand==-1 and rotated==True)):
 			print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
 			loc:Location=feature.location
-			topY=verticalSequenceSpacing+yStart
+			topY:int=verticalSequenceSpacing+yStart
 			#labelId=canvas.create_rectangle( xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, xStart+baseRectangleSymbolXPixelSize*loc.end,topY+ 2*baseRectangleSymbolYPixelSize , fill="white", outline="black" )
 			# Get the width of the second string
 			# bbox = canvas.bbox(labelId)  # bbox returns (x1, y1, x2, y2)

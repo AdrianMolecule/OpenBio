@@ -143,17 +143,17 @@ def checkTranslation( inSeq, outSeq):
 	return successFlag
 
 def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rot=None):
+	shrink=gl.prefs.get_preference_value(preference_name="shrink")
 	"""Draws a sequence record on the canvas"""
-	x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font, coloredBases)	
+	x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font, coloredBases, shrink)	
 	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	if sequenceRecord.annotations.get("molecule_type")!="ss-DNA":
-		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, True, rotated=True if rot else False)
+		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, True, shrink,rotated=True if rot else False)
 		yFin=yFin+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	return  x,yFin
 
 def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, 
-			   font, coloredBases, complemented=False, rotated=None):
-	"""Draws a sequence record on the canvas"""
+			   font, coloredBases, complemented=False, shrink=True, rotated=None):
 	x=xStart
 	seq:Seq=sequenceRecord._seq
 	if complemented:
@@ -161,19 +161,10 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,bas
 	else:
 		dnaSequenceStr=seqToString(seq)
 	nonOverlappingRegions:list[tuple[int,int]]=findNonOverlappingRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in sequenceRecord.features])
-	print("Non overlapping regions:", nonOverlappingRegions)
-	for feature in sequenceRecord.features:
-		if((feature.location.strand==1 and rotated is None) or (feature.location.strand==-1 and rotated==True)):
-			print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
-			loc:Location=feature.location
-			topY:int=verticalSequenceSpacing+yStart
-			print("Location:", loc.start, loc.end, loc.strand)
-	# print("draw sec:",dnaSequenceStr)
-	index=0
-	for letter in dnaSequenceStr:
-		drawBase(letter,canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize,
-		    baseRectangleSymbolYPixelSize,gl.prefs.get_preference_value(letter), font, coloredBases, isIndexOverlapping(index, nonOverlappingRegions), rotated)
-		index+=1
+	for i in range(len(dnaSequenceStr)):
+		letter=dnaSequenceStr[i]
+		drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize,
+		    baseRectangleSymbolYPixelSize,gl.prefs.get_preference_value(letter), font, coloredBases, isIndexOverlapping(i, nonOverlappingRegions), rotated)
 		x += baseRectangleSymbolXPixelSize # Move to the next position
 	#draw features
 	for feature in sequenceRecord.features:

@@ -201,6 +201,7 @@ class Preferences:
             "verticalPixelsMargin":     Preference("verticalPixelsMargin", int, 2,  int,"Vertical pixel margin for layout"),
             "verticalSequenceSpacing":  Preference("verticalSequenceSpacing", int,  10, int,"Vertical sequence spacing"),
             "coloredBases":             Preference("coloredBases", bool, True, convertToBool, "Enable or disable colored bases in the sequence"),
+            "shrink":             Preference("shrink", bool, True, convertToBool, "Shrinks the sequence and keeps features"),
             "A":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
             "T":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),
             "G":                        Preference( "G", str, "lime green", str,"Color for Guanine (G)"),

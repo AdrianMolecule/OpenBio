@@ -3,4 +3,5 @@
     "python.analysis.inlayHints.callArgumentNames": "all",
     "python.analysis.inlayHints.variableTypes": true,
     "python.analysis.autoImportCompletions": true,
+    "jupyter.debugJustMyCode": false
 }

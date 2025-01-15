@@ -28,7 +28,7 @@ def drawCanvas( canvas:Canvas)->int:
 	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
 	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
 	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
-	gl.prefs.dump()
+	# gl.prefs.dump()
 	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
@@ -46,7 +46,7 @@ def drawCanvas( canvas:Canvas)->int:
 	canvas.config(scrollregion=(0, 0, sequenceWidth,100))  # Set the scrollable area
 	return 2*canvasHorizontalMargin+sequenceWidth
 
-
+# the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
 def loadFile()->list[SeqRecord]:	
 	defaultTestFileValue:int=gl.prefs.get_preference_value(preference_name="defaultTestFileValue") 
 	if defaultTestFileValue is None or defaultTestFileValue=="":	
@@ -142,22 +142,21 @@ def checkTranslation( inSeq, outSeq):
 		successFlag=False
 	return successFlag
 
-def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rotated=None):
+def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rot=None):
 	"""Draws a sequence record on the canvas"""
-	ds=True
 	x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font, coloredBases)	
 	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-	if ds:
-		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rotated=True)
+	if sequenceRecord.annotations.get("molecule_type")!="ss-DNA":
+		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, True, rotated=True if rot else False)
 		yFin=yFin+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	return  x,yFin
 
 def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, 
-			   font, coloredBases, rotated=None):
+			   font, coloredBases, complemented=False, rotated=None):
 	"""Draws a sequence record on the canvas"""
 	x=xStart
 	seq:Seq=sequenceRecord._seq
-	if rotated:
+	if complemented:
 		dnaSequenceStr=seqToString(seq.complement())
 	else:
 		dnaSequenceStr=seqToString(seq)

@@ -121,14 +121,13 @@ class Preferences:
             self.update_preference_value(preference, preference.get_value(), listbox)
             # Update the listbox in the popup and main window after reset
             self.update_preferences_display(listbox)  # Update the popup's listbox
+            self.updateCallback() 
             popup.grab_set()  # Reapply grab_set to ensure it remains modal            
             popup.destroy()
             self.preferencesPopup.grab_set()  # it seems to have amnesia and forgets it is modal
 
         def commandCloseEditPopup():
-            print(self)
             apply_changes()
-            # popup.grab_set()  # Reapply grab_set to ensure it remains modal TODO adrian tkinter.TclError: bad window path name ".!toplevel2"           
             popup.destroy()             
             self.preferencesPopup.grab_set()  # it seems to have amnesia and forgets it is modal
 
@@ -201,6 +200,7 @@ class Preferences:
             "verticalPixelsMargin":     Preference("verticalPixelsMargin", int, 2,  int,"Vertical pixel margin for layout"),
             "verticalSequenceSpacing":  Preference("verticalSequenceSpacing", int,  10, int,"Vertical sequence spacing"),
             "coloredBases":             Preference("coloredBases", bool, True, convertToBool, "Enable or disable colored bases in the sequence"),
+            "rotated":             Preference("rotated", bool, True, convertToBool, "Show complementary strand bases upside down"),
             "shrink":             Preference("shrink", bool, True, convertToBool, "Shrinks the sequence and keeps features"),
             "A":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
             "T":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),

@@ -4,6 +4,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
 
 sequenceRecordList=[]
+shrinkedSequenceRecordList=[]
 loadedFileName:str
 
 def appendSequenceRecord(newSequenceRecord:SeqRecord):

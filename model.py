@@ -1,39 +1,43 @@
+class Model:
+    # Class attribute of type Model
+    modelInstance: "Model" = None  # Initially set to None
 
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
+    def __init__(self, loadedFileName:str,sequenceRecordList: list = []):
+        # Instance attributes
+        self.sequenceRecordList: list = sequenceRecordList
+        self.shrinkedSequenceRecordList: list = []
+        self.loadedFileName: str = loadedFileName
+        
+    def dumpModel(self, optionalMessage=None) -> dict:
+        """Method to display the current state of the model."""
+        m= {"where":optionalMessage,
+            "model": Model.modelInstance,  # Accessing the class attribute
+            "loadedFileName": self.loadedFileName,
+            "sequenceRecordList": self.sequenceRecordList,
+            "shrinkedSequenceRecordList": self.shrinkedSequenceRecordList,
+        }
+        print( m)
+        
+    @classmethod
+    def setModel(cls, instance: "Model") -> None:
+        """Class method to set the class attribute modelInstance."""
+        if isinstance(instance, Model):
+            cls.modelInstance = instance
+        else:
+            raise ValueError("The instance must be of type Model.")
 
-sequenceRecordList=[]
-shrinkedSequenceRecordList=[]
-loadedFileName:str
-
-def appendSequenceRecord(newSequenceRecord:SeqRecord):
-    print("Appended new record", newSequenceRecord)
-    sequenceRecordList.append(newSequenceRecord)
-
-def dumpModel(message):
-    print(message,"Current Model", sequenceRecordList)
-    for record in sequenceRecordList:
-        print("Record id", record.id)
-        print("Record name:", record.name)
-        print("Record seq", record.seq)
-        feature:SeqFeature
-        for feature in record.features:
-            print("Feature:",feature.id,  feature.location,feature.location.strand, feature.type )
-            for q in feature.qualifiers:
-                print("Qualifier:",q)
-            loc:Location=feature.location
-            print("Location:", loc.start, loc.end, loc.strand)
-
-
-# 	for record in sequenceRecordIterator:
-# 		#print("EMBL record name:%s length:%i Sequence: %s" % (record.id, len(record), record.seq))
-# 	return 	sequenceRecordList[0].seq
-
-# def appendSequence(newSequence:Seq):
-# 	for record in sequenceRecordIterator:
-# 		#print("EMBL record name:%s length:%i Sequence: %s" % (record.id, len(record), record.seq))
-# 		sequenceRecordList.append(record)
-# 	return 	sequenceRecordList[0].seq
-# mod:Seq
-
+# Example of using the Model class
+if __name__ == "__main__":
+    # Create an instance of Model
+    loadedFileName = "data.txt"
+    # Set some instance attributes
+    loadedFileName = "data.txt"
+    sequenceRecordList = ["record1", "record2", "record3"]
+    shrinkedSequenceRecordList = ["record1", "record2"]
+    myModel = Model(loadedFileName,sequenceRecordList,shrinkedSequenceRecordList)
+    # Set the class attribute to the instance
+    Model.setModel(myModel)
+    # Call dumpModel to get the current state
+    modelDump = myModel.modelInstance.dumpModel()
+    print(Model.modelInstance)
+    print(modelDump)

@@ -89,7 +89,7 @@ class UiApp:
 
     def loadFileCommandHandler(self)->Seq:
         loadModel(False)
-        self.root.title("OpenBio "+model.loadedFileName)
+        self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
         drawCanvas(self.canvas) 
 
     def refresh(self):
@@ -116,6 +116,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = UiApp(root)
     loadModel(default=True)
-    app.root.title("OpenBio "+model.loadedFileName)
+    app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
     drawCanvas(app.canvas)
     root.mainloop()

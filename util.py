@@ -17,7 +17,7 @@ from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPo
 # from upsideDownText import UpsideDownText
 # mine
 import gl
-import model
+from model import Model
 #######
 # some 'constants' that can be changed if push comes to shove !
 # some initial values that might remain constant
@@ -40,7 +40,7 @@ def drawCanvas( canvas:Canvas)->int:
 	canvas.delete("all")
 	sequenceWidth=0
 	sequenceIndex=0
-	for sequenceRecord in model.sequenceRecordList:
+	for sequenceRecord in Model.modelInstance.sequenceRecordList:
 		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font,coloredBases, rotated)
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
@@ -52,28 +52,28 @@ def drawCanvas( canvas:Canvas)->int:
 	return 2*canvasHorizontalMargin+sequenceWidth
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
-def loadFile(default=False)->list[SeqRecord]:	
+def loadFile(default=False)->tuple[list[SeqRecord],str]:	
 	if default:
 		filePath=str(Path(__file__).resolve().parent)+gl.prefs.get_preference_value("defaultTestFileValue")
 	else:
 		filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
+	secRecList:list[SeqRecord]		=None
 	if filePath:
 		try:
-			secRecList:list[SeqRecord]=loadEmblSequences(filePath)
-			print(secRecList,secRecList.__class__)                
-			model.loadedFileName=filePath
-			return secRecList
+			secRecList=loadEmblSequences(filePath)
 		except Exception as e:
 			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
 	else:
 			messagebox.showwarning("No file", "Please select a file")
+	return secRecList, filePath
 
 def loadModel(default:None):	
-	seqRecList:list[SeqRecord]= loadFile(default )
-	print ("New load of model", seqRecList )
-	model.sequenceRecordList=seqRecList
-	model.dumpModel("in main")
-	# model.appendSequenceRecord(newSequenceRecord=SeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
+	seqRecList, fileName= loadFile(default )
+	newModel=Model(fileName,seqRecList)
+	Model.modelInstance=newModel
+	print ("New load of Model.modelInstance", seqRecList,list())
+	Model.modelInstance.dumpModel("in main")
+	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=SeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
 def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
     # Initialize an empty list to store non-overlapping regions
@@ -178,7 +178,7 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,sequenceIndex:int,xStart:i
 	if shrink and not complemented: # build the cache twice
 		shrinkedSequenceRecord= SeqRecord(Seq(""))
 		shrinkedSequenceRecord.features = deepcopy(sequenceRecord.features)
-		model.shrinkedSequenceRecordList.append(shrinkedSequenceRecord)
+		Model.modelInstance.shrinkedSequenceRecordList.append(shrinkedSequenceRecord)
 
 	if complemented:
 		dnaSequenceStr=seqToString(seq.complement())
@@ -201,7 +201,7 @@ def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,sequenceIndex:int,xStart:i
 			adjustCachedFeatureLocations(i,shrinkedRecord=shrinkedSequenceRecord, 	originalRecord=sequenceRecord )
 	#draw features from original or cached features
 	if shrink:
-		source=model.shrinkedSequenceRecordList[len(model.shrinkedSequenceRecordList)-1]
+		source=Model.modelInstance.shrinkedSequenceRecordList[len(Model.modelInstance.shrinkedSequenceRecordList)-1]
 	else:
 		source=sequenceRecord
 

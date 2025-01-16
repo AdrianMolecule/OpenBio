@@ -3,7 +3,7 @@ XX
 AC   ;
 XX
 DT   05-JAN-2025 (Rel. 1, Created)
-DT   15-JAN-2025 (Rel. 1, Last updated, Version 1)
+DT   16-JAN-2025 (Rel. 1, Last updated, Version 1)
 XX
 DE   natural linear DNA.
 XX
@@ -16,7 +16,7 @@ RN   [1]
 RP   1 to 955
 RA   .
 RT   "Direct Submission"
-RL   Exported Jan 15, 2025 from SnapGene 8.0.1
+RL   Exported Jan 16, 2025 from SnapGene 8.0.1
 RL   https://www.snapgene.com
 XX
 FH   Key             Location/Qualifiers
@@ -35,9 +35,6 @@ FT   misc_feature    210..220
 FT                   /label=Feature no arrow
 FT   misc_feature    231..241
 FT                   /label=Feature 2 arrows
-FT   TATA_signal     join(249..250,260)
-FT                   /label=Feature 5 two segments
-FT                   /label=Feature 5
 XX
 SQ   Sequence 955 BP; 313 A; 282 C; 119 G; 241 T; 0 other
      ATGTTCATAA TTAACATTCT AAGCCTAATC ATTCCTATCC TACTGGCCGT AGCATTCCTC        60

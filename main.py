@@ -71,7 +71,7 @@ class UiApp:
         menuBar = Menu(root)
         # Left menu: File Load
         fileMenu = Menu(menuBar, tearoff=0)
-        fileMenu.add_command(label="Load File", command=loadFile)
+        fileMenu.add_command(label="Load File", command=lambda:self.loadFileCommandHandler())
         menuBar.add_cascade(label="File", menu=fileMenu)
         # Right menu: Exit
         exitMenu = Menu(menuBar, tearoff=0)
@@ -88,7 +88,7 @@ class UiApp:
         gl.prefs.open_preferences_popup()       
 
     def loadFileCommandHandler(self)->Seq:
-        loadModel()
+        loadModel(False)
         self.root.title("OpenBio "+model.loadedFileName)
         drawCanvas(self.canvas) 
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     # global root
     root = tk.Tk()
     app = UiApp(root)
-    loadModel()
+    loadModel(default=True)
     app.root.title("OpenBio "+model.loadedFileName)
     drawCanvas(app.canvas)
     root.mainloop()

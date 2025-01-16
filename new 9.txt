@@ -8,3 +8,7 @@ python I have a long string and an unordered list of locations of substrings con
             if preference.name == name:
                 return preference
         return None  # Return None if no preference with that name is found
+		
+		
+		strep tag instead of His tag
+		alpha CD

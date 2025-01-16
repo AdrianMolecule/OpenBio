@@ -1,4 +1,5 @@
 """Utility methods"""
+from copy import deepcopy
 from tkinter import Canvas
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -30,29 +31,32 @@ def drawCanvas( canvas:Canvas)->int:
 	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
 	# gl.prefs.dump()
 	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
+	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
 	yPos:int = verticalSequenceSpacing  # y is 0 at top and increases downwards
+	
 	# Clear any previous drawings
 	canvas.delete("all")
 	sequenceWidth=0
+	sequenceIndex=0
 	for sequenceRecord in model.sequenceRecordList:
-		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font,coloredBases)#, True)
+		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font,coloredBases, rotated)
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
+		sequenceIndex+=1
 	#
 	# Adjust the scrollable region based on the length of the string
 	canvas.config(scrollregion=(0, 0, sequenceWidth,100))  # Set the scrollable area
 	return 2*canvasHorizontalMargin+sequenceWidth
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
-def loadFile()->list[SeqRecord]:	
-	defaultTestFileValue:int=gl.prefs.get_preference_value(preference_name="defaultTestFileValue") 
-	if defaultTestFileValue is None or defaultTestFileValue=="":	
-		filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
-	else:
+def loadFile(default=False)->list[SeqRecord]:	
+	if default:
 		filePath=str(Path(__file__).resolve().parent)+gl.prefs.get_preference_value("defaultTestFileValue")
+	else:
+		filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
 	if filePath:
 		try:
 			secRecList:list[SeqRecord]=loadEmblSequences(filePath)
@@ -64,12 +68,12 @@ def loadFile()->list[SeqRecord]:
 	else:
 			messagebox.showwarning("No file", "Please select a file")
 
-def loadModel():	
-	seqRecList:list[SeqRecord]= loadFile()
+def loadModel(default:None):	
+	seqRecList:list[SeqRecord]= loadFile(default )
 	print ("New load of model", seqRecList )
 	model.sequenceRecordList=seqRecList
 	model.dumpModel("in main")
-	model.appendSequenceRecord(newSequenceRecord=SeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
+	# model.appendSequenceRecord(newSequenceRecord=SeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
 def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
     # Initialize an empty list to store non-overlapping regions
@@ -89,7 +93,7 @@ def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
     return nonOverlappingRegions
 
 def isIndexOverlapping( index, nonOverlappingRegions): 
-	return any(start <= index < end for start, end in nonOverlappingRegions)		
+	return not any(start <= index < end for start, end in nonOverlappingRegions)		
 
 def drawCanvasCircle(canvas:Canvas):
         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -142,40 +146,66 @@ def checkTranslation( inSeq, outSeq):
 		successFlag=False
 	return successFlag
 
-def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rot=None):
+def drawSequenceRecord(canvas:Canvas,sequenceRecord:SeqRecord,sequenceIndex, xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rot):
 	shri=gl.prefs.get_preference_value(preference_name="shrink")
 	"""Draws a sequence record on the canvas"""
-	x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font, coloredBases, shri)	
+	x=drawStrand( canvas, sequenceRecord,sequenceIndex, canvasHorizontalMargin,yStart,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font, coloredBases, shri)	
 	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	if sequenceRecord.annotations.get("molecule_type")!="ss-DNA":
-		x=drawStrand( canvas, sequenceRecord, canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,
+		x=drawStrand( canvas, sequenceRecord, sequenceIndex,canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,
 			   baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases,
 			    shri,complemented=True, rotated=True if rot else False)
 		yFin=yFin+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	return  x,yFin
 
-def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing,  font, coloredBases,
-			    shrink=None, complemented=False, rotated=None):
+def adjustCachedFeatureLocations(i:int, shrinkedRecord:SeqRecord, originalRecord:SeqRecord):
+	for f in range(len(shrinkedRecord.features)):		
+		if originalRecord.features[f].location.start >i:
+			if  isinstance(shrinkedRecord.features[f].location,CompoundLocation):
+				parts = list()
+				for loc in shrinkedRecord.features[f].location.parts:
+					loc=loc-1
+					parts.append(loc)
+				shrinkedRecord.features[f].location=CompoundLocation(parts)
+			else:
+				shrinkedRecord.features[f].location=shrinkedRecord.features[f].location-1
+			
+
+def drawStrand(canvas:Canvas,sequenceRecord:SeqRecord,sequenceIndex:int,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing,  font, coloredBases,
+			    shrink=None, complemented=False, rotated=None)->int:
 	x=xStart
 	seq:Seq=sequenceRecord._seq
+	if shrink and not complemented: # build the cache twice
+		shrinkedSequenceRecord= SeqRecord(Seq(""))
+		shrinkedSequenceRecord.features = deepcopy(sequenceRecord.features)
+		model.shrinkedSequenceRecordList.append(shrinkedSequenceRecord)
+
 	if complemented:
 		dnaSequenceStr=seqToString(seq.complement())
 	else:
 		dnaSequenceStr=seqToString(seq)
 	nonOverlappingRegions:list[tuple[int,int]]=findNonOverlappingRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in sequenceRecord.features])
-	spamCount=0
+	spamCount=1
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
 		overlapping: bool=isIndexOverlapping(i, nonOverlappingRegions)
 		if overlapping==True:
 			spamCount=0
-		if True:#not shrink or spamCount<4:
+		if not shrink or spamCount<=3:
 			drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize,
 				baseRectangleSymbolYPixelSize,gl.prefs.get_preference_value(letter), font, coloredBases, overlapping, rotated)
 			spamCount+=1
-		x += baseRectangleSymbolXPixelSize # Move to the next position
-	#draw features
-	for feature in sequenceRecord.features:
+			x += baseRectangleSymbolXPixelSize # Move to the next position
+		elif shrink and not complemented:
+			# skip a letter at intex i
+			adjustCachedFeatureLocations(i,shrinkedRecord=shrinkedSequenceRecord, 	originalRecord=sequenceRecord )
+	#draw features from original or cached features
+	if shrink:
+		source=model.shrinkedSequenceRecordList[len(model.shrinkedSequenceRecordList)-1]
+	else:
+		source=sequenceRecord
+
+	for feature in source.features:
 		if((feature.location.strand==1 and rotated is None) or (feature.location.strand==-1 and rotated==True)):
 			print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
 			loc:Location=feature.location
@@ -202,9 +232,9 @@ def drawTextInRectangle(tex:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSi
 # Define functions to draw each DNA base x,y relative from upper left corner
 def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, coloredBases, isIndexOverlapping=None, rotated=None):
 	if coloredBases==False:
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("grey" if isIndexOverlapping else "white"), outline="black" )
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("white" if isIndexOverlapping else "grey"), outline="black" )
 	else:			 #colored bases
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("grey" if isIndexOverlapping else color), outline="black" )
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=(color if isIndexOverlapping else "grey"), outline="black" )
 	# 
 	if rotated:
 		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	

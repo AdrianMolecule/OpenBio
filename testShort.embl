@@ -1,0 +1,29 @@
+ID   ; SV ; linear; ss-DNA; STD; SYN; 30 BP.
+XX
+AC   ;
+XX
+DT   16-JAN-2025 (Rel. 1, Created)
+DT   16-JAN-2025 (Rel. 1, Last updated, Version 1)
+XX
+DE   synthetic linear DNA
+XX
+KW   .
+XX
+OS   synthetic DNA construct
+OC   .
+XX
+RN   [1]
+RP   1 to 30
+RA   .
+RT   "Direct Submission"
+RL   Exported Jan 16, 2025 from SnapGene 8.0.1
+RL   https://www.snapgene.com
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   misc_feature    7..8
+FT                   /label=F1
+XX
+SQ   Sequence 30 BP; 14 A; 5 C; 5 G; 6 T; 0 other
+     GATACAGATA CAGATACAGA TACAGATACT        30
+//

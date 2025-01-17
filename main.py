@@ -38,10 +38,10 @@ class UiApp:
         column=0
         self.bottomButtonBar.grid(row=1, column=column, padx=5, pady=5, sticky="ew")
         column+=1
-        loadFileButton=tk.Button(self.bottomButtonBar, text="Load New Sequences", command=lambda:self.loadFileCommandHandler())
+        loadFileButton=tk.Button(self.bottomButtonBar, text="Load New Sequences", command=lambda:self.loadSequencesHandler())
         loadFileButton.grid(row=0, column=column, padx=5)
         column+=1
-        loadFileButton=tk.Button(self.bottomButtonBar, text="Add New Sequences", command=lambda:self.loadFileCommandHandler())
+        loadFileButton=tk.Button(self.bottomButtonBar, text="Add New Sequences", command=lambda:self.addSequencesHandler())
         loadFileButton.grid(row=0, column=column, padx=5)
         column+=1        
         buttonZi = tk.Button(self.bottomButtonBar, text="Zoom In", command=lambda: self.canvasZoom(True))
@@ -71,7 +71,7 @@ class UiApp:
         menuBar = Menu(root)
         # Left menu: File Load
         fileMenu = Menu(menuBar, tearoff=0)
-        fileMenu.add_command(label="Load File", command=lambda:self.loadFileCommandHandler())
+        fileMenu.add_command(label="Load File", command=lambda:self.loadSequencesHandler())
         menuBar.add_cascade(label="File", menu=fileMenu)
         # Right menu: Exit
         exitMenu = Menu(menuBar, tearoff=0)
@@ -87,8 +87,13 @@ class UiApp:
     def updatePreferences(self):
         gl.prefs.open_preferences_popup()       
 
-    def loadFileCommandHandler(self)->Seq:
-        loadModel(False)
+    def loadSequencesHandler(self)->Seq:
+        loadModel(False, append=False)
+        self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+        drawCanvas(self.canvas) 
+
+    def addSequencesHandler(self)->Seq:
+        loadModel(False, append=True)
         self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
         drawCanvas(self.canvas) 
 
@@ -112,7 +117,6 @@ class UiApp:
 
 
 if __name__ == "__main__":
-    # global root
     root = tk.Tk()
     app = UiApp(root)
     loadModel(default=True)

@@ -171,7 +171,7 @@ class Preferences:
             # elif p.value_type == bool:
             #     return True if v == "True" else False
             elif p.value_type != str:
-                print("value before conversion",v)
+                # print("value before conversion",v)
                 return p.string_conversion_method( v)
             return v
         messagebox.showerror("Preference Not Found", f"Preference with name '{preference_name}' not found.")

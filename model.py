@@ -5,7 +5,6 @@ class Model:
     def __init__(self, loadedFileName:str,sequenceRecordList: list = []):
         # Instance attributes
         self.sequenceRecordList: list = sequenceRecordList
-        self.shrinkedSequenceRecordList: list = []
         self.loadedFileName: str = loadedFileName
         
     def dumpModel(self, optionalMessage=None) -> dict:
@@ -14,7 +13,6 @@ class Model:
             "model": Model.modelInstance,  # Accessing the class attribute
             "loadedFileName": self.loadedFileName,
             "sequenceRecordList": self.sequenceRecordList,
-            "shrinkedSequenceRecordList": self.shrinkedSequenceRecordList,
         }
         print( m)
         
@@ -34,7 +32,7 @@ if __name__ == "__main__":
     loadedFileName = "data.txt"
     sequenceRecordList = ["record1", "record2", "record3"]
     shrinkedSequenceRecordList = ["record1", "record2"]
-    myModel = Model(loadedFileName,sequenceRecordList,shrinkedSequenceRecordList)
+    myModel = Model(loadedFileName,sequenceRecordList)
     # Set the class attribute to the instance
     Model.setModel(myModel)
     # Call dumpModel to get the current state

@@ -121,9 +121,17 @@ def loadEmblSequences(emblName:str)->list[MySeqRecord]:
 	sequenceRecordIterator=SeqIO.parse(emblName, "embl")
 	sequenceRecordList:list[MySeqRecord]=[]
 	for record in sequenceRecordIterator:
-		myRecord=MySeqRecord(record)
-		myRecord.singleStranded=True if record.annotations.get("molecule_type")=="ss-DNA" else False
-		sequenceRecordList.append(myRecord)
+		singleStranded=True if record.annotations.get("molecule_type")=="ss-DNA" else False
+		if singleStranded:
+			myRecord=MySeqRecord(record,True, True, primer=False)
+			sequenceRecordList.append(myRecord)	
+		else:
+			myRecord53=MySeqRecord(record,False, True, primer=False)
+			sequenceRecordList.append(myRecord53)
+			myRecord35=MySeqRecord(record,False, False, primer=False)
+			sequenceRecordList.append(myRecord35)		
+			myRecord53.hybridizedTo(myRecord35)
+			myRecord35.hybridizedTo(myRecord53)
 	return 	sequenceRecordList 
 
 
@@ -143,19 +151,21 @@ def seqToString(seq:Seq)->str:
 def printRed(message:str):
 	print('\033[1;31m' + message + '\033[0m') 
 
-def checkTranslation( inSeq, outSeq):
-	"""Checks the translation of the engineered sequence against the wild-type sequence"""
-	myInSeq=MySeqRecord(Seq(inSeq))
-	myOutSeq=MySeqRecord(Seq(outSeq))
-	if myInSeq.translate().seq==myOutSeq.translate().seq:
-		successFlag=True
-	else:
-		successFlag=False
-	return successFlag
+# def checkTranslation( inSeq, outSeq):
+# 	"""Checks the translation of the engineered sequence against the wild-type sequence"""
+# 	myInSeq=MySeqRecord(Seq(inSeq))
+# 	myOutSeq=MySeqRecord(Seq(outSeq))
+# 	if myInSeq.translate().seq==myOutSeq.translate().seq:
+# 		successFlag=True
+# 	else:
+# 		successFlag=False
+# 	return successFlag
 
 def drawSequenceRecord(canvas:Canvas,sequenceRecord:MySeqRecord,sequenceIndex, xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rot):
 	shri=gl.prefs.get_preference_value(preference_name="shrink")
-	x=drawStrand( canvas, sequenceRecord=sequenceRecord,sequenceIndex=sequenceIndex, xStart=canvasHorizontalMargin,yStart=yStart,baseRectangleSymbolXPixelSize=baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize=baseRectangleSymbolYPixelSize,verticalSequenceSpacing=verticalSequenceSpacing, font=font, coloredBases=coloredBases, shrink=shri)	
+	x=drawStrand( canvas, sequenceRecord=sequenceRecord,sequenceIndex=sequenceIndex, xStart=canvasHorizontalMargin,yStart=yStart,
+			  baseRectangleSymbolXPixelSize=baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize=baseRectangleSymbolYPixelSize,
+			  verticalSequenceSpacing=verticalSequenceSpacing, font=font, coloredBases=coloredBases, shrink=shri)	
 	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
 	if not sequenceRecord.singleStranded:
 		x=drawStrand( canvas, sequenceRecord, sequenceIndex,canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,
@@ -178,8 +188,8 @@ def adjustCachedFeatureLocations(i:int, record:MySeqRecord):
 				shrinkedFeatures[f].location=shrinkedFeatures[f].location-1
 			
 
-def drawStrand(canvas:Canvas,sequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing,  font, coloredBases,
-			    shrink=None, complemented=False, rotated=None)->int:
+def drawStrand(canvas:Canvas,sequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing,
+			   font, coloredBases, shrink=None, complemented=False, rotated=None)->int:
 	x=xStart		
 	if not isinstance(sequenceRecord,SeqRecord):
 		print ("stop here")

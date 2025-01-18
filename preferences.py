@@ -202,11 +202,13 @@ class Preferences:
             "coloredBases":             Preference("coloredBases", bool, True, convertToBool, "Enable or disable colored bases in the sequence"),
             "rotated":             Preference("rotated", bool, True, convertToBool, "Show complementary strand bases upside down"),
             "shrink":             Preference("shrink", bool, True, convertToBool, "Shrinks the sequence and keeps features"),
-            "T":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
-            "A":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),
+            "A":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
+            "T":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),
             "G":                        Preference( "G", str, "lime green", str,"Color for Guanine (G)"),
             "C":                        Preference( "C", str, "red",  str,"Color for Cytosine (C)"),
-            "verticalSteps":            Preference( "verticalSteps", bool, False,  convertToBool,"Steps buttons are vertical or horizontal")
+            "verticalSteps":            Preference( "verticalSteps", bool, False,  convertToBool,"Steps buttons are vertical or horizontal"),
+            "minPrimerLength":            Preference( "minPrimerLength", int, 18,  int,"minimal length for a primer"),
+            "maxPrimerLength":            Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer")
         }
         # print("name:",p.get("fontName").name," end value")
         return p

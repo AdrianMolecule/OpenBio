@@ -9,7 +9,7 @@ from typing import Union
 
 class MySeqRecord(SeqRecord):
 
-    def __init__(self, seqRecord):
+    def __init__(self, seqRecord,singleStranded:bool,fiveTo3:bool,primer:bool):
         # Call the parent class constructor with the attributes of seqRecord
         super().__init__(seqRecord.seq, id=seqRecord.id, name=seqRecord.name, description=seqRecord.description,  annotations=seqRecord.annotations, features=seqRecord.features, dbxrefs=seqRecord.dbxrefs)
         # Copy all attributes from the original SeqRecord
@@ -17,8 +17,19 @@ class MySeqRecord(SeqRecord):
             setattr(self, key, value)  
             # 2 added fields      
         self.singleStranded = False
+        self.fiveTo3 = True
+        self.primer=False
+        self.hybridizedTo:MySeqRecord=None
         self.shrinkedFeatures=None
-        self.isPrimer=False
+
+    def __str__(self):
+            # Customize how the item is printed
+            return f"Item: {self.value}"
+
+    def __repr__(self):
+        # Customize the representation of the item
+        return "id"+str(self.id)+" description:"+self.description+" SingleStranded:"+str(self.singleStranded)+ " primer:"+str(self.primer)+" 5To3:"+self.fiveTo3+" primer:"+self.primer,+" Sequence:"+str( self.seq)
+
         
 
     def displayInfo(self):

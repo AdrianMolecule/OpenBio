@@ -5,6 +5,7 @@
     //Adrian both justMycode false and purpose debug in terminal and ALSO in SETTINGS 
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",

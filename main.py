@@ -45,7 +45,7 @@ class UiApp:
         addFileButton=tk.Button(self.bottomButtonBar, text="Add New Sequences", command=lambda:self.addSequencesHandler())
         addFileButton.grid(row=0, column=column, padx=5)
         column+=1        
-        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:self.addPrimerHandler())
+        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimerHandler(self))
         addPrimerButton.grid(row=0, column=column, padx=5)
         column+=1        
         buttonZi = tk.Button(self.bottomButtonBar, text="Zoom In", command=lambda: self.canvasZoom(True))
@@ -78,15 +78,15 @@ class UiApp:
         self.stepsButtonBar.grid(row=row, column=col if vertSteps else "0", padx=5, pady=5, sticky=("ns" if vertSteps else "ew")) 
         
 
-        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate(None))
+        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate(self))
         buttonDenaturate.grid(row=row, column=col, pady=5)      
 
         row,col=incrementRowOrCol(row,col,vertSteps)
-        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers(root))
+        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers(self))
         buttonAneal.grid(row=row, column=col, pady=5)   
 
         row,col=incrementRowOrCol(row, col, vertSteps)
-        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate(root))
+        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate(self))
         buttonElongate.grid(row=row, column=col, pady=5)   
         row,col=incrementRowOrCol(row, col, vertSteps)
         #
@@ -149,7 +149,7 @@ class UiApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = UiApp(root)
-    loadModel(default=True)
+    loadModel(default=False)
     app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
     drawCanvas(app.canvas)
     root.mainloop()

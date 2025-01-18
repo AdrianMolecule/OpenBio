@@ -3,7 +3,7 @@ XX
 AC   ;
 XX
 DT   05-JAN-2025 (Rel. 1, Created)
-DT   15-JAN-2025 (Rel. 1, Last updated, Version 1)
+DT   17-JAN-2025 (Rel. 1, Last updated, Version 1)
 XX
 DE   natural linear DNA.
 XX
@@ -16,14 +16,16 @@ RN   [1]
 RP   1 to 955
 RA   .
 RT   "Direct Submission"
-RL   Exported Jan 15, 2025 from SnapGene 8.0.1
+RL   Exported Jan 17, 2025 from SnapGene 8.0.1
 RL   https://www.snapgene.com
 XX
 FH   Key             Location/Qualifiers
 FH
 FT   primer_bind     20..37
+FT                   /label=Primer 1 Bind
 FT                   /label=Primer 1
 FT   primer_bind     complement(44..67)
+FT                   /label=Primer 2 bind
 FT                   /label=Primer 2
 FT   misc_feature    140..160
 FT                   /label=Feature arrow Right

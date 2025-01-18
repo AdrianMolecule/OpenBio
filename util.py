@@ -2,9 +2,8 @@
 from copy import deepcopy
 from tkinter import Canvas
 import tkinter as tk
-from tkinter import filedialog, messagebox
-from tkinter import Menu
-from tkinter import filedialog
+from tkinter import filedialog, messagebox, Menu
+
 #
 import sys
 from pathlib import Path  

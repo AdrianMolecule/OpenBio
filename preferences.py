@@ -205,7 +205,8 @@ class Preferences:
             "T":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
             "A":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),
             "G":                        Preference( "G", str, "lime green", str,"Color for Guanine (G)"),
-            "C":                        Preference( "C", str, "red",  str,"Color for Cytosine (C)")
+            "C":                        Preference( "C", str, "red",  str,"Color for Cytosine (C)"),
+            "verticalSteps":            Preference( "verticalSteps", bool, False,  convertToBool,"Steps buttons are vertical or horizontal")
         }
         # print("name:",p.get("fontName").name," end value")
         return p

@@ -1,5 +1,6 @@
 import tkinter as tk
 from util import *
+from buttoncommands import *
 from preferences import Preferences
 
 class UiApp:
@@ -38,11 +39,14 @@ class UiApp:
         column=0
         self.bottomButtonBar.grid(row=1, column=column, padx=5, pady=5, sticky="ew")
         column+=1
-        loadFileButton=tk.Button(self.bottomButtonBar, text="Load New Sequences", command=lambda:self.loadSequencesHandler())
+        loadFileButton=tk.Button(self.bottomButtonBar, text="Load Sequences", command=lambda:self.loadSequencesHandler())
         loadFileButton.grid(row=0, column=column, padx=5)
         column+=1
-        loadFileButton=tk.Button(self.bottomButtonBar, text="Add New Sequences", command=lambda:self.addSequencesHandler())
-        loadFileButton.grid(row=0, column=column, padx=5)
+        addFileButton=tk.Button(self.bottomButtonBar, text="Add New Sequences", command=lambda:self.addSequencesHandler())
+        addFileButton.grid(row=0, column=column, padx=5)
+        column+=1        
+        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:self.addPrimerHandler())
+        addPrimerButton.grid(row=0, column=column, padx=5)
         column+=1        
         buttonZi = tk.Button(self.bottomButtonBar, text="Zoom In", command=lambda: self.canvasZoom(True))
         buttonZi.grid(row=0, column=column, padx=10, pady=10)
@@ -53,13 +57,39 @@ class UiApp:
         column+=1        
         # Create print button
         buttonPrint = tk.Button(self.bottomButtonBar, text="Print", command=lambda: self.printCanvas(self.canvas))
-        # Create vertical button bar on the right
-        self.rightButtonBar = tk.Frame(self.root)
-        self.rightButtonBar.grid(row=0, column=1, padx=5, pady=5, sticky="ns")
-
+        buttonPrint.grid(row=0, column=column, padx=10, pady=10)
+        column+=1   
         buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=self.refresh)
-        buttonRefresh.grid(row=1, column=0, pady=5)
+        column+=1   
+        buttonRefresh.grid(row=0, column=0, pady=5)
+        #
+        # Create Steps button bar
+        def incrementRowOrCol(row,col,vertical):
+            if vertical:
+                return row+1,col
+            else:
+                return row,col+1
+        
+        self.stepsButtonBar = tk.Frame(self.root)
+        vertSteps=gl.prefs.get_preference_value("verticalSteps")
+        row=0 if vertSteps else 2
+        col=1
 
+        self.stepsButtonBar.grid(row=row, column=col if vertSteps else "0", padx=5, pady=5, sticky=("ns" if vertSteps else "ew")) 
+        
+
+        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate(None))
+        buttonDenaturate.grid(row=row, column=col, pady=5)      
+
+        row,col=incrementRowOrCol(row,col,vertSteps)
+        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers(root))
+        buttonAneal.grid(row=row, column=col, pady=5)   
+
+        row,col=incrementRowOrCol(row, col, vertSteps)
+        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate(root))
+        buttonElongate.grid(row=row, column=col, pady=5)   
+        row,col=incrementRowOrCol(row, col, vertSteps)
+        #
         # Configure grid to allow resizing
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)

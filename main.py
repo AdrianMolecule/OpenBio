@@ -6,6 +6,7 @@ from preferences import Preferences
 class UiApp:
 
     def __init__(self, root):
+        self.canvas=None
         self.root = root
         self.root.title("OpenBio")
         screen_width = root.winfo_screenwidth()-20
@@ -45,7 +46,7 @@ class UiApp:
         addFileButton=tk.Button(self.bottomButtonBar, text="Add New Sequences", command=lambda:self.addSequencesHandler())
         addFileButton.grid(row=0, column=column, padx=5)
         column+=1        
-        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimerHandler(self))
+        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimerHandler(self.canvas))
         addPrimerButton.grid(row=0, column=column, padx=5)
         column+=1        
         buttonZi = tk.Button(self.bottomButtonBar, text="Zoom In", command=lambda: self.canvasZoom(True))
@@ -149,7 +150,7 @@ class UiApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = UiApp(root)
-    loadModel(default=False)
+    loadModel(default=True)
     app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
     drawCanvas(app.canvas)
     root.mainloop()

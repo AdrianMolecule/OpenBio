@@ -2,10 +2,10 @@ ID   ; SV ; linear; ss-DNA; STD; SYN; 20 BP.
 XX
 AC   ;
 XX
-DT   17-JAN-2025 (Rel. 1, Created)
-DT   17-JAN-2025 (Rel. 1, Last updated, Version 1)
+DT   19-JAN-2025 (Rel. 1, Created)
+DT   19-JAN-2025 (Rel. 1, Last updated, Version 1)
 XX
-DE   synthetic linear DNA
+DE   F3 primer.
 XX
 KW   .
 XX
@@ -16,7 +16,7 @@ RN   [1]
 RP   1 to 20
 RA   .
 RT   "Direct Submission"
-RL   Exported Jan 17, 2025 from SnapGene 8.0.1
+RL   Exported Jan 19, 2025 from SnapGene 8.0.1
 RL   https://www.snapgene.com
 XX
 FH   Key             Location/Qualifiers

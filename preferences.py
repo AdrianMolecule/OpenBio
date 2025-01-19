@@ -207,7 +207,7 @@ class Preferences:
             "G":                        Preference( "G", str, "lime green", str,"Color for Guanine (G)"),
             "C":                        Preference( "C", str, "red",  str,"Color for Cytosine (C)"),
             "verticalSteps":            Preference( "verticalSteps", bool, False,  convertToBool,"Steps buttons are vertical or horizontal"),
-            "minPrimerLength":            Preference( "minPrimerLength", int, 18,  int,"minimal length for a primer"),
+            "minPrimerOverlapLength":            Preference( "minPrimerOverlapLength", int, 18,  int,"minimal length for a primer"),
             "maxPrimerLength":            Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer")
         }
         # print("name:",p.get("fontName").name," end value")

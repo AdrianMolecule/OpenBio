@@ -3,10 +3,10 @@ from copy import deepcopy
 from tkinter import Canvas
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
-
 #
 import sys
-from pathlib import Path  
+from pathlib import Path
+from typing import no_type_check  
 from PIL import ImageGrab
 #
 from Bio.SeqRecord import SeqRecord
@@ -26,29 +26,23 @@ canvasHorizontalMargin = 0 # blank space from the left edge of canvas
 horizontalPixelsMargin=2 # total room between the base letter and it's holding box
 
 def drawCanvas( canvas:Canvas)->int:
-	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
-	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
-	# gl.prefs.dump()
-	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
-	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
-	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
-	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
-	yPos:int = verticalSequenceSpacing  # y is 0 at top and increases downwards
-	
+	yPos:int = 20  # y is 0 at top and increases downwards	
 	# Clear any previous drawings
 	canvas.delete("all")
 	sequenceWidth=0
 	sequenceIndex=0
 	for sequenceRecord in Model.modelInstance.sequenceRecordList:
-		newSequenceWidth,yFinal=drawSequenceRecord(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize,verticalSequenceSpacing, font,coloredBases, rotated)
+		if not sequenceRecord.primer:
+			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
+		else:# primer
+				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
 		sequenceIndex+=1
 	#
 	# Adjust the scrollable region based on the length of the string
-	canvas.config(scrollregion=(0, 0, sequenceWidth,100))  # Set the scrollable area
+	canvas.config(scrollregion=(0, 0, sequenceWidth,yFinal+20))  # Set the scrollable area
 	return 2*canvasHorizontalMargin+sequenceWidth
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
@@ -60,7 +54,7 @@ def loadFile(default=False)->tuple[list[MySeqRecord],str]:
 	secRecList:list[MySeqRecord]		=None
 	if filePath:
 		try:
-			secRecList=loadEmblSequences(filePath)
+			secRecList=loadAndSeparateEmblSequences(filePath)
 		except Exception as e:
 			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
 	else:
@@ -116,11 +110,13 @@ def calculateBaseRectangleSymbolXPixelSize(fontSize):
 def calculateBaseRectangleSymbolYPixelSize(fontSize):
 	return fontSize+horizontalPixelsMargin
 
-def loadEmblSequences(emblName:str)->list[MySeqRecord]:
+def loadAndSeparateEmblSequences(emblName:str)->list[MySeqRecord]:
 	#fIn=open(embl,'r')
 	sequenceRecordIterator=SeqIO.parse(emblName, "embl")
 	sequenceRecordList:list[MySeqRecord]=[]
 	for record in sequenceRecordIterator:
+		if record.features==None:
+			record.features=list()
 		singleStranded=True if record.annotations.get("molecule_type")=="ss-DNA" else False
 		if singleStranded:
 			myRecord=MySeqRecord(record,True, True, primer=False)
@@ -128,10 +124,12 @@ def loadEmblSequences(emblName:str)->list[MySeqRecord]:
 		else:
 			myRecord53=MySeqRecord(record,False, True, primer=False)
 			sequenceRecordList.append(myRecord53)
-			myRecord35=MySeqRecord(record,False, False, primer=False)
+			threeTo5Record=deepcopy(myRecord53)
+			threeTo5Record.seq=threeTo5Record.seq.complement()
+			myRecord35=MySeqRecord(threeTo5Record,False, False, primer=False)
 			sequenceRecordList.append(myRecord35)		
-			myRecord53.hybridizedTo(myRecord35)
-			myRecord35.hybridizedTo(myRecord53)
+			myRecord53.hybridizedTo=myRecord35
+			myRecord35.hybridizedTo=myRecord53
 	return 	sequenceRecordList 
 
 
@@ -161,19 +159,6 @@ def printRed(message:str):
 # 		successFlag=False
 # 	return successFlag
 
-def drawSequenceRecord(canvas:Canvas,sequenceRecord:MySeqRecord,sequenceIndex, xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases, rot):
-	shri=gl.prefs.get_preference_value(preference_name="shrink")
-	x=drawStrand( canvas, sequenceRecord=sequenceRecord,sequenceIndex=sequenceIndex, xStart=canvasHorizontalMargin,yStart=yStart,
-			  baseRectangleSymbolXPixelSize=baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize=baseRectangleSymbolYPixelSize,
-			  verticalSequenceSpacing=verticalSequenceSpacing, font=font, coloredBases=coloredBases, shrink=shri)	
-	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-	if not sequenceRecord.singleStranded:
-		x=drawStrand( canvas, sequenceRecord, sequenceIndex,canvasHorizontalMargin,yStart+2*verticalSequenceSpacing,baseRectangleSymbolXPixelSize,
-			   baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, coloredBases,
-			    shri,complemented=True, rotated=True if rot else False)
-		yFin=yFin+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-	return  x,yFin
-
 def adjustCachedFeatureLocations(i:int, record:MySeqRecord):
 	shrinkedFeatures=record.shrinkedFeatures
 	for f in range(len(shrinkedFeatures)):		
@@ -186,44 +171,98 @@ def adjustCachedFeatureLocations(i:int, record:MySeqRecord):
 				shrinkedFeatures[f].location=CompoundLocation(parts)
 			else:
 				shrinkedFeatures[f].location=shrinkedFeatures[f].location-1
-			
 
-def drawStrand(canvas:Canvas,sequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int,baseRectangleSymbolXPixelSize,baseRectangleSymbolYPixelSize, verticalSequenceSpacing,
-			   font, coloredBases, shrink=None, complemented=False, rotated=None)->int:
-	x=xStart		
-	if not isinstance(sequenceRecord,SeqRecord):
-		print ("stop here")
-	seq:Seq=sequenceRecord.seq
-	if shrink and not complemented: # build the cache twice
-		sequenceRecord.shrinkedFeatures= deepcopy(sequenceRecord.features)
 
-	if complemented:
-		dnaSequenceStr=seqToString(seq.complement())
-	else:
-		dnaSequenceStr=seqToString(seq)
-	nonOverlappingRegions:list[tuple[int,int]]=findNonOverlappingRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in sequenceRecord.features])
-	spamCount=1
+def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int)->int:
+	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
+	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
+	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
+	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
+	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
+	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
+	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	x: int=xStart		
+	seq:Seq=mySequenceRecord.seq
+	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
+	dnaSequenceStr=seqToString(seq)	
+	i=0
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
-		overlapping: bool=isIndexOverlapping(i, nonOverlappingRegions)
+		color="white" if not coloredBases else gl.prefs.get_preference_value(letter)
+		drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+		color=color, font=font, upsideDownLetter=upsideDownLetter)
+		x += baseRectangleSymbolXPixelSize # Move to the next position
+
+	for feature in mySequenceRecord.features:
+			if((feature.location.strand==1 and mySequenceRecord.fiveTo3) or (feature.location.strand==-1 and not mySequenceRecord.fiveTo3)):
+				# print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
+				loc:Location=feature.location
+				topY:int=verticalSequenceSpacing+yStart
+				#labelId=canvas.create_rectangle( xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, xStart+baseRectangleSymbolXPixelSize*loc.end,topY+ 2*baseRectangleSymbolYPixelSize , fill="white", outline="black" )
+				# Get the width of the second string
+				# bbox = canvas.bbox(labelId)  # bbox returns (x1, y1, x2, y2)
+				# width = bbox[2] - bbox[0]  # The width is the difference between x2 and x1
+				# print("Location:", loc.start, loc.end, loc.strand)
+				drawTextInRectangle(feature.qualifiers.get("label"),canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white',loc.end-loc.start, font )
+	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
+	return  x,yFin
+
+def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int)->int:
+	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
+	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
+	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
+	# gl.prefs.dump()
+	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
+	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
+	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
+	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	x: int=xStart		
+	seq:Seq=mySequenceRecord.seq
+	if shrink:
+		mySequenceRecord.shrinkedFeatures= deepcopy(mySequenceRecord.features)
+	dnaSequenceStr=seqToString(seq)
+	if mySequenceRecord.features:
+		nonOverlappingRegions:list[tuple[int,int]]=findNonOverlappingRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in mySequenceRecord.features])
+	spamCount=1
+	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
+	for i in range(len(dnaSequenceStr)):
+		letter: str=dnaSequenceStr[i]
+		if mySequenceRecord.primer:
+			overlapping=True
+		else:			
+			overlapping: bool=isIndexOverlapping(i, nonOverlappingRegions)
+
 		if overlapping==True:
 			spamCount=0
 		if not shrink or spamCount<=3:
-			drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize,
-				baseRectangleSymbolYPixelSize,gl.prefs.get_preference_value(letter), font, coloredBases if not shrink  else True if overlapping else False, overlapping, rotated)
+			color=None
+			if not coloredBases:
+				if not shrink:
+					color="white"
+				elif not overlapping:
+					color="grey"
+			else:
+				if shrink and not overlapping:
+					color="grey"
+				else:
+					color =gl.prefs.get_preference_value(letter)
+
+			drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+			color=color, font=font, upsideDownLetter=upsideDownLetter)
 			spamCount+=1
 			x += baseRectangleSymbolXPixelSize # Move to the next position
-		elif shrink and not complemented:
+		elif shrink:
 			# skip a letter at intex i
-			adjustCachedFeatureLocations(i, record=sequenceRecord )
+			adjustCachedFeatureLocations(i, record=mySequenceRecord )
 	#draw features from original or cached features
 	if shrink:
-		source=sequenceRecord.shrinkedFeatures
+		source=mySequenceRecord.shrinkedFeatures
 	else:
-		source=sequenceRecord.features
-
+		source: list[SeqFeature]=mySequenceRecord.features
 	for feature in source:
-		if((feature.location.strand==1 and rotated is None) or (feature.location.strand==-1 and rotated==True)):
+		if((feature.location.strand==1 and mySequenceRecord.fiveTo3) or (feature.location.strand==-1 and not mySequenceRecord.fiveTo3)):
 			# print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
 			loc:Location=feature.location
 			topY:int=verticalSequenceSpacing+yStart
@@ -232,8 +271,9 @@ def drawStrand(canvas:Canvas,sequenceRecord:MySeqRecord,sequenceIndex:int,xStart
 			# bbox = canvas.bbox(labelId)  # bbox returns (x1, y1, x2, y2)
 			# width = bbox[2] - bbox[0]  # The width is the difference between x2 and x1
 			# print("Location:", loc.start, loc.end, loc.strand)
-			drawTextInRectangle(feature.qualifiers.get("label")[0],canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white',loc.end-loc.start, font, )
-	return  x
+			drawTextInRectangle(feature.qualifiers.get("label")[0],canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white',loc.end-loc.start, font )
+	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
+	return  x,yFin
 
 def drawTextInRectangle(tex:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, length,font,rotated=None):
 	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
@@ -247,13 +287,10 @@ def drawTextInRectangle(tex:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSi
 	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
 	
 # Define functions to draw each DNA base x,y relative from upper left corner
-def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, colored, isIndexOverlapping=None, rotated=None):
-	if not colored:
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=("white" if isIndexOverlapping else "grey"), outline="black" )
-	else:			 #colored bases
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
+def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, upsideDownLetter=None):
+	canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	# 
-	if rotated:
+	if upsideDownLetter:
 		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
 	else:
 		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")

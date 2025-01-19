@@ -4,14 +4,15 @@ from Bio.SeqRecord import SeqRecord
 from util import *
 from wrappers import MySeqRecord
 
-def findPrimerOverlaps(targetDnaRecord:MySeqRecord, primerRecord:MySeqRecord, minOverlapLength):
+
+def findPrimerOverlaps(targetDnaRecordSequence:Seq, primerRecordSequence:Seq, minOverlapLength):
     overlapStartsEnds = set()
     largestOverlaps = []
     largestLength = 0
     largestOverlapInShorts = []
     # if targetDnaRecord.is
-    complementdPrimerString:str=seqToString(primerRecord.seq.complement()).lower()
-    targetDnaRecordString: str =seqToString(targetDnaRecord.seq).lower()
+    complementdPrimerString:str=seqToString(primerRecordSequence).lower()
+    targetDnaRecordString: str =seqToString(targetDnaRecordSequence).lower()
 
     for i in range(len(complementdPrimerString) - minOverlapLength + 1):
         for j in range(i + minOverlapLength, len(complementdPrimerString) + 1):
@@ -30,13 +31,24 @@ def findPrimerOverlaps(targetDnaRecord:MySeqRecord, primerRecord:MySeqRecord, mi
 
     return list(overlapStartsEnds), largestOverlaps, largestOverlapInShorts
 
-longString =  MySeqRecord(SeqRecord("aaAATTccGGCCa"),True,fiveTo3=False,primer=False)
-shortString =  MySeqRecord(SeqRecord("aaaaTTAAtCCGa"),True,fiveTo3=True,primer=True)
+
+
+targetDnaSequence:Seq =         Seq("aaAATTccGGCCa")# 3To5
+uncomplementedPrimerRecord:Seq =Seq("ttttAATTaGGCt") # and this one complemented looks like aaaaTTAAtCCGa
+complementedPrimerSeq=uncomplementedPrimerRecord.complement()
+
 minOverlapLength = 3
-overlaps, largest, largestInShort = findPrimerOverlaps(longString, shortString, minOverlapLength)
+overlaps, largestInStrand, largestInPrimer = findPrimerOverlaps(targetDnaSequence, complementedPrimerSeq, minOverlapLength)
+print("targetDnaSequence:", targetDnaSequence)
+print("uncomplementedPrimerRecord:", uncomplementedPrimerRecord)
+print("primerSeq:", complementedPrimerSeq)
 print("Overlaps:", overlaps)
-print("Largest Overlaps in longString:", largest)
-print("Largest Overlaps in shortString:", largestInShort)
+print("largest:", largestInStrand)
+if largestInStrand:
+    print("Largest Overlaps in targetDnaSequence:", largestInStrand, seqToString(targetDnaSequence)[largestInStrand[0][0]:largestInStrand[0][1]] )
+    print("Largest Overlaps in primer:", largestInPrimer, seqToString(targetDnaSequence)[largestInPrimer[0][0]:largestInPrimer[0][1]] )
+
+
 
 
     

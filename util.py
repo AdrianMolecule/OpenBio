@@ -32,7 +32,7 @@ def drawCanvas( canvas:Canvas)->int:
 	sequenceWidth=0
 	sequenceIndex=0
 	for sequenceRecord in Model.modelInstance.sequenceRecordList:
-		if not sequenceRecord.primer:
+		if not sequenceRecord.isPrimer:
 			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
 		else:# primer
 				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
@@ -182,7 +182,8 @@ def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xSta
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	x: int=xStart		
+	xStart=xStart	+mySequenceRecord.xStartOffset*	baseRectangleSymbolXPixelSize
+	x: int=xStart
 	seq:Seq=mySequenceRecord.seq
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	dnaSequenceStr=seqToString(seq)	
@@ -229,11 +230,10 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xSta
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
-		if mySequenceRecord.primer:
+		if mySequenceRecord.isPrimer:
 			overlapping=True
-		else:			
+		else:	
 			overlapping: bool=isIndexOverlapping(i, nonOverlappingRegions)
-
 		if overlapping==True:
 			spamCount=0
 		if not shrink or spamCount<=3:

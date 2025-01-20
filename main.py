@@ -79,15 +79,15 @@ class UiApp:
         self.stepsButtonBar.grid(row=row, column=col if vertSteps else "0", padx=5, pady=5, sticky=("ns" if vertSteps else "ew")) 
         
 
-        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate(self))
+        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate())
         buttonDenaturate.grid(row=row, column=col, pady=5)      
 
         row,col=incrementRowOrCol(row,col,vertSteps)
-        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers(self))
+        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers())
         buttonAneal.grid(row=row, column=col, pady=5)   
 
         row,col=incrementRowOrCol(row, col, vertSteps)
-        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate(self))
+        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate())
         buttonElongate.grid(row=row, column=col, pady=5)   
         row,col=incrementRowOrCol(row, col, vertSteps)
         #
@@ -129,7 +129,6 @@ class UiApp:
         drawCanvas(self.canvas) 
 
     def refresh(self):
-        print("in refresh",self.canvas)
         drawCanvas(self.canvas) 
 
     def canvasDrawCircle(self):

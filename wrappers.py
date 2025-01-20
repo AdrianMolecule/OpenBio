@@ -17,8 +17,9 @@ class MySeqRecord(SeqRecord):
             setattr(self, key, value)  
             # 2 added fields      
         self.singleStranded = singleStranded
+        self.isPrimer=primer
         self.fiveTo3 = fiveTo3
-        self.primer=primer
+        self.xStartOffset=0        
         self.hybridizedTo:MySeqRecord=None
         self.shrinkedFeatures=None
 
@@ -28,9 +29,10 @@ class MySeqRecord(SeqRecord):
 
     def __repr__(self):
         # Customize the representation of the item
-        return "id"+str(self.id)+" description:"+self.description+" SingleStranded:"+str(self.singleStranded)+" primer:"+str(self.primer)+" 5To3:"+str(self.fiveTo3) +" primer:"+str(self.primer)+" Sequence:"+str( self.seq)[:70]
+        return "id"+str(self.id)+" description:"+self.description+" SingleStranded:"+str(self.singleStranded)+" primer:"+str(self.isPrimer)+" 5To3:"+str(self.fiveTo3) +" primer:"+str(self.isPrimer)+" Sequence:"+str( self.seq)[:70]
 
-        
+    def isHybridizedToPrimer (self):
+         return  self.hybridizedTo and  self.hybridizedTo.primer
 
     def displayInfo(self):
         print(f"ID: {self.id}")

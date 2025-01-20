@@ -24,8 +24,8 @@ FH
 FT   primer_bind     20..37
 FT                   /label=Primer 1 Bind
 FT                   /label=Primer 1
-FT   primer_bind     complement(44..67)
-FT                   /label=Primer 2 bind
+FT   primer_bind     complement(57..76)
+FT                   /label=F2PrimerBind
 FT                   /label=Primer 2
 FT   misc_feature    140..160
 FT                   /label=Feature arrow Right

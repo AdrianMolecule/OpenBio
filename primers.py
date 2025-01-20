@@ -39,7 +39,7 @@ uncomplementedPrimerRecord:Seq =Seq("ttttAATTaGGCt") # and this one complemented
 complementedPrimerSeq=uncomplementedPrimerRecord.complement()
 
 minOverlapLength = 3
-overlaps, largestInStrand, largestInPrimer = findPrimerOverlaps(targetDnaSequence, complementedPrimerSeq, minOverlapLength)
+overlaps, largestInStrand, largestInPrimer = PrimerUtils.findPrimerOverlaps(targetDnaSequence, complementedPrimerSeq, minOverlapLength)
 print("targetDnaSequence:", targetDnaSequence)
 print("uncomplementedPrimerRecord:", uncomplementedPrimerRecord)
 print("primerSeq:", complementedPrimerSeq)

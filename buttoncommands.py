@@ -20,15 +20,14 @@ from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPo
 import gl
 from model import Model
 from util import *
-from main import UiApp
-from checkPrimerBinding import findPrimerOverlaps
+from primers import PrimerUtils
 
 def addPrimerHandler(canvas:Canvas)->Seq:
     seqRecList, filePath= loadFile( )
     if len(seqRecList)>1:
         messagebox.showerror("Too many sequences", f" A primer should contain ony one sequence and this one contains {len(seqRecList)}") 
         return None
-    newRecord = seqRecList[0]
+    newRecord: MySeqRecord = seqRecList[0]
     if not newRecord.annotations.get("molecule_type")=="ss-DNA":
         messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
         return None
@@ -51,7 +50,7 @@ def addPrimerHandler(canvas:Canvas)->Seq:
     if leng> maxLen:
             messagebox.showerror("Invalid Primer", f"primer length: {len} is larger than maximum primar length {maxLen}") 
             return
-    myRecord.primer=True
+    myRecord.isPrimer=True
     myRecord.singleStranded=True
     myRecord.fiveTo3=True
     myRecord.hybridizedTo=None
@@ -60,36 +59,49 @@ def addPrimerHandler(canvas:Canvas)->Seq:
     drawCanvas(canvas)
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
-def denaturate( uiApp:UiApp):
+def denaturate( ):
   messagebox.showerror("TBD", f"denaturate") 
 
-def anealPrimers( uiApp:UiApp):
+
+def anealPrimers( ):
     minOverlapLength:int=gl.prefs.get_preference_value("minPrimerOverlapLength")
-    for sequenceRecord in Model.modelInstance.sequenceRecordList:
+    for p, sequenceRecord in enumerate(Model.modelInstance.sequenceRecordList):
         sequenceRecord:MySeqRecord
-
-        if sequenceRecord.primer:
+        if sequenceRecord.isPrimer and not sequenceRecord.hybridizedTo :
             complementedPrimerSeq:Seq=sequenceRecord.seq.complement()
-            for strandRegularRecord in Model.modelInstance.sequenceRecordList:
+            complementedReversedPrimerSeq:Seq=sequenceRecord.seq.reverse_complement()
+            for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList):
                 strandRegularRecord: MySeqRecord
-                if not strandRegularRecord.primer:      
-                    if not strandRegularRecord.fiveTo3: # <----
+                if not strandRegularRecord.isPrimer:    # should add: and  not strandRegularRecord.hybridizedTo  
+                    if strandRegularRecord.fiveTo3: # <----
                         print("Testing 5to3",strandRegularRecord.seq) 
-                        # overlaps, largestInStrand, largestInPrimer =findPrimerOverlaps(targetDnaRecord=strandRegularRecord, primerRecordSeq=complementedPrimerSeq, minOverlapLength=minOverlapLength)
+                        overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedReversedPrimerSeq, minOverlapLength=minOverlapLength)
+                        if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
+                            messagebox.showinfo("Problem", f"primer {sequenceRecord.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
+                            return
+                        if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
+                            complementedReversedPrimerSeq
+                            sequenceRecord.xStartOffset=largestOverlapsInStrand[0][0]
+                            primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+                            primRec.fiveTo3=False
+                            primRec.seq=seqToString(primRec.seq)[::-1]
+                            Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
+                            return
                     else:  
-                        print("Testing 3to5 ",strandRegularRecord.seq)                 
-                        overlaps, largestOverlapInStrand, largestOverlapInPrimer =findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq, minOverlapLength=minOverlapLength)
-                    if largestOverlapInStrand:                            
-                        print("Overlaps:", overlaps)
-                        print("Largest Overlaps in longString:", largestOverlapInStrand)
-                        print("Largest Overlaps in shortString:", largestOverlapInPrimer)                        
-                        print("In:", strandRegularRecord)  
-        # newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
-		# if newSequenceWidth>sequenceWidth:
-		# 	sequenceWidth=newSequenceWidth
-		# yPos=yFinal
-		# sequenceIndex+=1
+                        print("Testing 3to5",strandRegularRecord.seq)                 
+                        overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq, minOverlapLength=minOverlapLength)                      
+                        if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
+                            messagebox.showinfo("Problem", f"primer {sequenceRecord.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
+                            return
+                        if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
+                            sequenceRecord.xStartOffset=largestOverlapsInStrand[0][0]
+                            primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+                            primRec.fiveTo3=True
+                            Model.modelInstance.sequenceRecordList.insert(s,primRec)    
+                            return                  
+
+    
 
 
-def elongate( uiApp:UiApp):
+def elongate( ):
   messagebox.showinfo("TBD", f"elongate") 

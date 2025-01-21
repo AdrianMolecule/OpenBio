@@ -94,6 +94,7 @@ class UiApp:
         buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate())
         buttonElongate.grid(row=row, column=col, pady=5)   
         row,col=incrementRowOrCol(row, col, vertSteps)
+        
         #
         # Configure grid to allow resizing
         self.root.grid_rowconfigure(0, weight=1)

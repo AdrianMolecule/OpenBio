@@ -37,7 +37,7 @@ def addPrimerHandler(canvas:Canvas)->Seq:
         mandatoryFeatureText=newRecord.description# this is what is shown
     else:        
         mandatoryFeatureText="AddedFeature"
-    mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=1), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
+    mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=None), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
     newRecord.features.append(mandatoryFeature)   
     myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
     leng=len(myRecord.seq) 
@@ -54,7 +54,7 @@ def addPrimerHandler(canvas:Canvas)->Seq:
     myRecord.fiveTo3=True
     myRecord.hybridizedTo=None
     Model.modelInstance.sequenceRecordList.append(myRecord)
-    Model.modelInstance.dumpModel("in main")
+    # Model.modelInstance.dumpModel("in main")
     drawCanvas(canvas)
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 

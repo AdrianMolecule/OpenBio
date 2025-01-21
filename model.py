@@ -10,7 +10,6 @@ class Model:
     def dumpModel(self, optionalMessage=None) -> dict:
         """Method to display the current state of the model."""
         m= {"where":optionalMessage,
-            "model": Model.modelInstance,  # Accessing the class attribute
             "loadedFileName": self.loadedFileName,
             "sequenceRecordList": self.sequenceRecordList,
         }
@@ -19,7 +18,7 @@ class Model:
     @classmethod
     def setModel(cls, instance: "Model") -> None:
         """Class method to set the class attribute modelInstance."""
-        if isinstance(instance, Model):
+        if isinstance(instance, Model): 
             cls.modelInstance = instance
         else:
             raise ValueError("The instance must be of type Model.")

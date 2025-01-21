@@ -1,6 +1,6 @@
 """Utility methods"""
 from copy import deepcopy
-from tkinter import Canvas
+from tkinter import Canvas, Button
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
 #
@@ -18,10 +18,10 @@ from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPo
 # mine
 import gl
 from model import Model
+from enhancedbutton import EnhancedButton
 #######
 # some 'constants' that can be changed if push comes to shove !
 # some initial values that might remain constant
-canvasHorizontalMargin = 0 # blank space from the left edge of canvas
 #canvasVerticalMargin = 30
 horizontalPixelsMargin=2 # head room between the base letter and it's holding box
 
@@ -33,9 +33,9 @@ def drawCanvas(canvas:Canvas )->int:
 	sequenceIndex=0
 	for sequenceRecord in Model.modelInstance.sequenceRecordList:
 		if not sequenceRecord.isPrimer:
-			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, canvasHorizontalMargin,yPos)
+			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, gl.canvasHorizontalMargin,yPos)
 		else:# primer
-				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, canvasHorizontalMargin,yPos)
+				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, gl.canvasHorizontalMargin,yPos)
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
@@ -43,7 +43,7 @@ def drawCanvas(canvas:Canvas )->int:
 	#
 	# Adjust the scrollable region based on the length of the string
 	canvas.config(scrollregion=(0, 0, sequenceWidth,yFinal+20))  # Set the scrollable area
-	return 2*canvasHorizontalMargin+sequenceWidth
+	return 2*gl.canvasHorizontalMargin+sequenceWidth
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
 def loadFile(default=False)->tuple[list[MySeqRecord],str]:	
@@ -180,7 +180,7 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, xStart: int, ySt
 		else:
 			source: list[SeqFeature] = mySequenceRecord.features
 	for feature in source:
-		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3)):
+		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
 			drawTextInRectangle(feature.qualifiers.get("label")[0], canvas, xStart + baseRectangleSymbolXPixelSize * loc.start, yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white', loc.end - loc.start, font)
 
@@ -198,7 +198,7 @@ def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 	seq:Seq=mySequenceRecord.seq
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	dnaSequenceStr=seqToString(seq)	
-	featureYStart, sequenceYStart, bandEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
+	featureYStart, sequenceYStart, bandYEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
 	i=0
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
@@ -207,7 +207,7 @@ def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 		color=color, font=font, upsideDownLetter=upsideDownLetter)
 		x += baseRectangleSymbolXPixelSize # Move to the next position
 	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
-	return  x,bandEnd
+	return  x,bandYEnd
 
 def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int)->int:
 	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
@@ -219,7 +219,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	featureYStart, sequenceYStart, bandEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
+	featureYStart, sequenceYStart, bandYEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
 	x: int=xStart		
 	seq:Seq=mySequenceRecord.seq
 	if shrink:
@@ -260,7 +260,13 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 
 	# Replace the placeholder with the call to the new method
 	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
-	return  x,bandEnd
+	
+	def enhancedButtonAction(event: tk.Event) -> None:
+		eb.handle_click(event)
+
+	# Create labels using the createLabel method
+	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description, 0, yStart, enhancedButtonAction, labelHeightPx=bandYEnd-yStart)	
+	return  x,bandYEnd
 
 #calculate the yop relative Ys for features and primers and the final y
 def calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):

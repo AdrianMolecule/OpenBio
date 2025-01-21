@@ -87,7 +87,7 @@ class UiApp:
         buttonDenaturate.grid(row=row, column=col, pady=5)      
 
         row,col=incrementRowOrCol(row,col,vertSteps)
-        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers())
+        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers(self.canvas))
         buttonAneal.grid(row=row, column=col, pady=5)   
 
         row,col=incrementRowOrCol(row, col, vertSteps)

@@ -264,24 +264,24 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 
 #calculate the yop relative Ys for features and primers and the final y
 def calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
-    canvas.create_line(xStart,yStart,xStart+40,yStart, fill="white")
-    if mySequenceRecord.fiveTo3:
-     featureYStart=yStart+verticalSequenceSpacing
-     sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-     if mySequenceRecord.hybridizedTo:
-      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
-     else:
-      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
-    else: #  3 to 5
-     if mySequenceRecord.hybridizedTo:
-      sequenceYStart=yStart
-      featureYStart=yStart+baseRectangleSymbolYPixelSize
-      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
-     else:
-      sequenceYStart=yStart+verticalSequenceSpacing
-      featureYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize			
-      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
-    return featureYStart,sequenceYStart,bandEnd
+	canvas.create_line(xStart,yStart,xStart+40,yStart, fill="white")
+	if mySequenceRecord.fiveTo3:
+		featureYStart=yStart+verticalSequenceSpacing
+		sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
+		if mySequenceRecord.hybridizedTo:
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+		else:
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+	else: #  3 to 5
+		if mySequenceRecord.hybridizedTo:
+			sequenceYStart=yStart
+			featureYStart=yStart+baseRectangleSymbolYPixelSize
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+		else:
+			sequenceYStart=yStart+verticalSequenceSpacing
+			featureYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize			
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+	return featureYStart,sequenceYStart,bandEnd
 
 def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, length,font,rotated=None):
 	canvas.create_rectangle( xLeft, yTop, xLeft + length*baseRectangleSymbolXPixelSize ,yTop + baseRectangleSymbolYPixelSize , fill=color, outline="black" )

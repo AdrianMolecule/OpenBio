@@ -97,7 +97,8 @@ class Preferences:
     def update_preference_value(self, preference, new_value, listbox):
         """ Update the preference value and refresh the UI. """
         preference.set_value(new_value)
-        self.update_preferences_display(listbox)  # Update the listbox in the popup
+        if listbox:
+            self.update_preferences_display(listbox)  # Update the listbox in the popup
 
     def edit_non_color_preference(self, preference:Preference, listbox):
         def apply_changes(event=None):

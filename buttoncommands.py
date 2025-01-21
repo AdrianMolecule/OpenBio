@@ -65,7 +65,8 @@ def denaturate( canvas:Canvas):
             sequenceRecord.hybridizedTo=False
     drawCanvas(canvas)
 
-def anealPrimers( ):
+def anealPrimers(canvas:Canvas ):
+    found:bool=False
     minOverlapLength:int=gl.prefs.get_preference_value("minPrimerOverlapLength")
     for p, sequenceRecord in enumerate(Model.modelInstance.sequenceRecordList):
         sequenceRecord:MySeqRecord
@@ -74,7 +75,7 @@ def anealPrimers( ):
             complementedReversedPrimerSeq:Seq=sequenceRecord.seq.reverse_complement()
             for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList):
                 strandRegularRecord: MySeqRecord
-                if not strandRegularRecord.isPrimer:    # should add: and  not strandRegularRecord.hybridizedTo  
+                if not strandRegularRecord.isPrimer and not strandRegularRecord.hybridizedTo:
                     if strandRegularRecord.fiveTo3: # <----
                         # print("Testing 5to3",strandRegularRecord.seq) 
                         overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedReversedPrimerSeq, minOverlapLength=minOverlapLength)
@@ -82,13 +83,14 @@ def anealPrimers( ):
                             messagebox.showinfo("Problem", f"primer {sequenceRecord.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
                             return
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
-                            complementedReversedPrimerSeq
+                            found=True
                             sequenceRecord.xStartOffset=largestOverlapsInStrand[0][0]
+                            Model.modelInstance.sequenceRecordList[p].hybridizedTo=Model.modelInstance.sequenceRecordList[s]
+                            Model.modelInstance.sequenceRecordList[s].hybridizedTo=Model.modelInstance.sequenceRecordList[p]
                             primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
                             primRec.fiveTo3=False
                             primRec.seq=seqToString(primRec.seq)[::-1]
                             Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
-                            return
                     else:  
                         # print("Testing 3to5",strandRegularRecord.seq)                 
                         overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq, minOverlapLength=minOverlapLength)                      
@@ -96,11 +98,18 @@ def anealPrimers( ):
                             messagebox.showinfo("Problem", f"primer {sequenceRecord.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
                             return
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
+                            found=True
                             sequenceRecord.xStartOffset=largestOverlapsInStrand[0][0]
+                            Model.modelInstance.sequenceRecordList[p].hybridizedTo=Model.modelInstance.sequenceRecordList[s]
+                            Model.modelInstance.sequenceRecordList[s].hybridizedTo=Model.modelInstance.sequenceRecordList[p]
                             primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
                             primRec.fiveTo3=True
                             Model.modelInstance.sequenceRecordList.insert(s,primRec)    
-                            return                  
+    if found:
+        gl.prefs.set_preference_value("shrink", False)
+        drawCanvas(canvas)                                            
+    else:
+        messagebox.showinfo("No Anealing", f"The specific primer does not anneal to any present sequence") 
 
 
 

@@ -59,7 +59,7 @@ class Preferences:
             prefKeysAsList=list(self.preferences)
             if selected_index:
                 selectedPref:Preference = self.preferences.get(prefKeysAsList[selected_index[0]])
-                print("name:",selectedPref.name," end value")
+                # print("name:",selectedPref.name," end value")
                 # If the selected preference is a nucleotide color (A, T, C, G), directly open the color chooser
                 if selectedPref.name in ['A', 'T', 'C', 'G']: 
                     self.pick_color(selectedPref, listbox)
@@ -198,7 +198,7 @@ class Preferences:
             "fontSize":                 Preference("fontSize", int, 10, int,"Font type for the canvas"),
             "horizontalPixelsMargin":   Preference("horizontalPixelsMargin", int,  2,int, "Horizontal pixel margin for layout"),
             "verticalPixelsMargin":     Preference("verticalPixelsMargin", int, 2,  int,"Vertical pixel margin for layout"),
-            "verticalSequenceSpacing":  Preference("verticalSequenceSpacing", int,  10, int,"Vertical sequence spacing"),
+            "verticalSequenceSpacing":  Preference("verticalSequenceSpacing", int, 15,  int,"Vertical sequence spacing"),
             "coloredBases":             Preference("coloredBases", bool, True, convertToBool, "Enable or disable colored bases in the sequence"),
             "rotated":             Preference("rotated", bool, True, convertToBool, "Show complementary strand bases upside down"),
             "shrink":             Preference("shrink", bool, True, convertToBool, "Shrinks the sequence and keeps features"),

@@ -23,13 +23,18 @@ class UiApp:
         canvasFrame = tk.Frame(self.root)
         canvasFrame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         # Create a canvas
-        self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=400)
+        self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=450)
         # Create a horizontal scrollbar
         self.hScrollbar = tk.Scrollbar(canvasFrame, orient="horizontal", command=self.canvas.xview)
         self.canvas.config(xscrollcommand=self.hScrollbar.set)
+        # Create a vertical scrollbar        
+        self.vScrollbar = tk.Scrollbar(canvasFrame, orient="vertical", command=self.canvas.yview)
+        self.canvas.config(xscrollcommand=self.hScrollbar.set)
+        self.canvas.config(yscrollcommand=self.vScrollbar.set)
         # Pack the canvas and scrollbar
         self.canvas.grid(row=0, column=0, sticky="nsew")
         self.hScrollbar.grid(row=1, column=0, sticky="ew")
+        self.vScrollbar.grid(row=0, column=1, sticky="ns")
         # Configure grid to allow resizing
         canvasFrame.grid_columnconfigure(0, weight=1)
         canvasFrame.grid_rowconfigure(0, weight=1)
@@ -78,8 +83,7 @@ class UiApp:
 
         self.stepsButtonBar.grid(row=row, column=col if vertSteps else "0", padx=5, pady=5, sticky=("ns" if vertSteps else "ew")) 
         
-
-        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate())
+        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate(self.canvas))
         buttonDenaturate.grid(row=row, column=col, pady=5)      
 
         row,col=incrementRowOrCol(row,col,vertSteps)

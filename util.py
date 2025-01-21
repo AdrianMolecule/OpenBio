@@ -23,19 +23,19 @@ from model import Model
 # some initial values that might remain constant
 canvasHorizontalMargin = 0 # blank space from the left edge of canvas
 #canvasVerticalMargin = 30
-horizontalPixelsMargin=2 # total room between the base letter and it's holding box
+horizontalPixelsMargin=2 # head room between the base letter and it's holding box
 
-def drawCanvas( canvas:Canvas)->int:
-	yPos:int = 20  # y is 0 at top and increases downwards	
+def drawCanvas(canvas:Canvas )->int:
+	yPos:int = 0  # y is 0 at top and increases downwards	
 	# Clear any previous drawings
 	canvas.delete("all")
 	sequenceWidth=0
 	sequenceIndex=0
 	for sequenceRecord in Model.modelInstance.sequenceRecordList:
 		if not sequenceRecord.isPrimer:
-			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
+			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, canvasHorizontalMargin,yPos)
 		else:# primer
-				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, sequenceIndex, canvasHorizontalMargin,yPos)
+				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, canvasHorizontalMargin,yPos)
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
@@ -69,8 +69,7 @@ def loadModel(default:False, append=False):
 	else:
 		newModel=Model(filePath,seqRecList)
 		Model.modelInstance=newModel
-
-	Model.modelInstance.dumpModel("in main")
+	# Model.modelInstance.dumpModel("in main")
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
 def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
@@ -93,8 +92,8 @@ def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
 def isIndexOverlapping( index, nonOverlappingRegions): 
 	return not any(start <= index < end for start, end in nonOverlappingRegions)		
 
-def drawCanvasCircle(canvas:Canvas):
-        canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
+# def drawCanvasCircle(canvas:Canvas):
+#         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
 
 def canvasZoom(zoomin):# 1 for  zoom In or bigger
     if zoomin!=True and gl.prefs.get_preference_value("fontSize")>3: # ZOOM OUT no to negative font sizes
@@ -131,7 +130,6 @@ def loadAndSeparateEmblSequences(emblName:str)->list[MySeqRecord]:
 			myRecord53.hybridizedTo=myRecord35
 			myRecord35.hybridizedTo=myRecord53
 	return 	sequenceRecordList 
-
 
 def loadFastas():
 	fName="short.fa" #sys.argv[1]
@@ -172,8 +170,21 @@ def adjustCachedFeatureLocations(i:int, record:MySeqRecord):
 			else:
 				shrinkedFeatures[f].location=shrinkedFeatures[f].location-1
 
+#draw features from original or cached features
+def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, xStart: int, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool):
+	if mySequenceRecord.isPrimer:
+		source: list[SeqFeature] = mySequenceRecord.features
+	else:# regular sequences
+		if shrink:
+			source = mySequenceRecord.shrinkedFeatures
+		else:
+			source: list[SeqFeature] = mySequenceRecord.features
+	for feature in source:
+		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3)):
+			loc: Location = feature.location
+			drawTextInRectangle(feature.qualifiers.get("label")[0], canvas, xStart + baseRectangleSymbolXPixelSize * loc.start, yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white', loc.end - loc.start, font)
 
-def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int)->int:
+def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int)->int:
 	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
 	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
 	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
@@ -187,29 +198,18 @@ def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xSta
 	seq:Seq=mySequenceRecord.seq
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	dnaSequenceStr=seqToString(seq)	
+	featureYStart, sequenceYStart, bandEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
 	i=0
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
 		color="white" if not coloredBases else gl.prefs.get_preference_value(letter)
-		drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+		drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 		color=color, font=font, upsideDownLetter=upsideDownLetter)
 		x += baseRectangleSymbolXPixelSize # Move to the next position
+	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	return  x,bandEnd
 
-	for feature in mySequenceRecord.features:
-			if((feature.location.strand==1 and mySequenceRecord.fiveTo3) or (feature.location.strand==-1 and not mySequenceRecord.fiveTo3)):
-				# print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
-				loc:Location=feature.location
-				topY:int=verticalSequenceSpacing+yStart
-				#labelId=canvas.create_rectangle( xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, xStart+baseRectangleSymbolXPixelSize*loc.end,topY+ 2*baseRectangleSymbolYPixelSize , fill="white", outline="black" )
-				# Get the width of the second string
-				# bbox = canvas.bbox(labelId)  # bbox returns (x1, y1, x2, y2)
-				# width = bbox[2] - bbox[0]  # The width is the difference between x2 and x1
-				# print("Location:", loc.start, loc.end, loc.strand)
-				drawTextInRectangle(feature.qualifiers.get("label"),canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white',loc.end-loc.start, font )
-	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-	return  x,yFin
-
-def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xStart:int, yStart:int)->int:
+def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int)->int:
 	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
 	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
 	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
@@ -219,6 +219,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xSta
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	featureYStart, sequenceYStart, bandEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
 	x: int=xStart		
 	seq:Seq=mySequenceRecord.seq
 	if shrink:
@@ -249,44 +250,52 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,sequenceIndex:int,xSta
 				else:
 					color =gl.prefs.get_preference_value(letter)
 
-			drawBase(letter, canvas, x, verticalSequenceSpacing+yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+			drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 			color=color, font=font, upsideDownLetter=upsideDownLetter)
 			spamCount+=1
 			x += baseRectangleSymbolXPixelSize # Move to the next position
 		elif shrink:
 			# skip a letter at intex i
 			adjustCachedFeatureLocations(i, record=mySequenceRecord )
-	#draw features from original or cached features
-	if shrink:
-		source=mySequenceRecord.shrinkedFeatures
-	else:
-		source: list[SeqFeature]=mySequenceRecord.features
-	for feature in source:
-		if((feature.location.strand==1 and mySequenceRecord.fiveTo3) or (feature.location.strand==-1 and not mySequenceRecord.fiveTo3)):
-			# print("Feature in drawSequenceRecord:","id:",feature.id, feature.qualifiers.get("label")[0] , "location:",feature.location,"strand",feature.location.strand, "type", feature.type,)
-			loc:Location=feature.location
-			topY:int=verticalSequenceSpacing+yStart
-			#labelId=canvas.create_rectangle( xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, xStart+baseRectangleSymbolXPixelSize*loc.end,topY+ 2*baseRectangleSymbolYPixelSize , fill="white", outline="black" )
-			# Get the width of the second string
-			# bbox = canvas.bbox(labelId)  # bbox returns (x1, y1, x2, y2)
-			# width = bbox[2] - bbox[0]  # The width is the difference between x2 and x1
-			# print("Location:", loc.start, loc.end, loc.strand)
-			drawTextInRectangle(feature.qualifiers.get("label")[0],canvas, xStart+baseRectangleSymbolXPixelSize*loc.start, topY+baseRectangleSymbolYPixelSize, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white',loc.end-loc.start, font )
-	yFin=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-	return  x,yFin
 
-def drawTextInRectangle(tex:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, length,font,rotated=None):
-	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
+	# Replace the placeholder with the call to the new method
+	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	return  x,bandEnd
+
+#calculate the yop relative Ys for features and primers and the final y
+def calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
+    canvas.create_line(xStart,yStart,xStart+40,yStart, fill="white")
+    if mySequenceRecord.fiveTo3:
+     featureYStart=yStart+verticalSequenceSpacing
+     sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
+     if mySequenceRecord.hybridizedTo:
+      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+     else:
+      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+    else: #  3 to 5
+     if mySequenceRecord.hybridizedTo:
+      sequenceYStart=yStart
+      featureYStart=yStart+baseRectangleSymbolYPixelSize
+      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+     else:
+      sequenceYStart=yStart+verticalSequenceSpacing
+      featureYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize			
+      bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+    return featureYStart,sequenceYStart,bandEnd
+
+def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, length,font,rotated=None):
+	canvas.create_rectangle( xLeft, yTop, xLeft + length*baseRectangleSymbolXPixelSize ,yTop + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black", angle=180)	
+		# The default anchor for text in Tkinter's Canvas.create_text() method is "center". T
+		canvas.create_text(xLeft+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, yTop+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black", angle=180)	
 	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black")	
+		canvas.create_text(xLeft+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, yTop+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black")	
 	# upside_down_text = tk.Text(canvas, width=gl.fontSize, height=1 , wrap=tk.WORD, bd=1, relief="solid", highlightbackground="red",font, padx=0, pady=-3) # height is the number of lines
 	# upside_down_text.insert(tk.END, tex)  # Insert the 
 	# textpushDown=baseRectangleSymbolYPixelSize+10
 	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
 	
-# Define functions to draw each DNA base x,y relative from upper left corner
+# Define functions to draw each DNA base x,y relative from upper 	left corner
 def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, upsideDownLetter=None):
 	canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	# 
@@ -295,7 +304,6 @@ def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRe
 	else:
 		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
 
-
 # Define functions to draw each DNA base x,y relative from upper left corner
 def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, length,rotated=None):
 	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
@@ -303,7 +311,6 @@ def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangl
 		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black", angle=180)	
 	else:
 		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black")	
-
 
 # Define functions to draw each DNA base x,y relative from upper left corner
 def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, coloredBases, rotated=None):
@@ -316,14 +323,11 @@ def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPix
 	else:
 		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")	
 
-
-
 def printCanvas(canvas):
 	# filePath=str(Path(__file__).resolve().parent)+"/junk"
 	# canvas.postscript(file=filePath, colormode='color')
  	# # Get the canvas's total scrollable area (scrollregion)
-    scrollregion = canvas.bbox("all")  # Returns (x1, y1, x2, y2)
-    
+    scrollregion = canvas.bbox("all")  # Returns (x1, y1, x2, y2)    
     if scrollregion:
         x1, y1, x2, y2 = scrollregion
         

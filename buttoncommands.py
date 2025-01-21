@@ -31,15 +31,14 @@ def addPrimerHandler(canvas:Canvas)->Seq:
     if not newRecord.annotations.get("molecule_type")=="ss-DNA":
         messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
         return None
-    mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=1), type="primer", id="Adrian")
+    # add a feature spanning the full length of the primer
+    mandatoryFeatureText="None"
     if newRecord.description !="":
-        mandatoryFeature.qualifiers.update({'label': newRecord.description})# this is what is shown
+        mandatoryFeatureText=newRecord.description# this is what is shown
     else:        
-        mandatoryFeature.qualifiers.update({'label': 'A Primer'})# this is what is shown
+        mandatoryFeatureText="AddedFeature"
+    mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=1), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
     newRecord.features.append(mandatoryFeature)   
-    #todo add a feature label?                     
-    # feature.qualifiers.get("label")[0]
-
     myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
     leng=len(myRecord.seq) 
     minLen=gl.prefs.get_preference_value("minPrimerOverlapLength")
@@ -59,9 +58,12 @@ def addPrimerHandler(canvas:Canvas)->Seq:
     drawCanvas(canvas)
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
-def denaturate( ):
-  messagebox.showerror("TBD", f"denaturate") 
-
+def denaturate( canvas:Canvas):
+    for sequenceRecord in Model.modelInstance.sequenceRecordList:
+        sequenceRecord:MySeqRecord
+        if sequenceRecord.hybridizedTo:
+            sequenceRecord.hybridizedTo=False
+    drawCanvas(canvas)
 
 def anealPrimers( ):
     minOverlapLength:int=gl.prefs.get_preference_value("minPrimerOverlapLength")
@@ -74,7 +76,7 @@ def anealPrimers( ):
                 strandRegularRecord: MySeqRecord
                 if not strandRegularRecord.isPrimer:    # should add: and  not strandRegularRecord.hybridizedTo  
                     if strandRegularRecord.fiveTo3: # <----
-                        print("Testing 5to3",strandRegularRecord.seq) 
+                        # print("Testing 5to3",strandRegularRecord.seq) 
                         overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedReversedPrimerSeq, minOverlapLength=minOverlapLength)
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
                             messagebox.showinfo("Problem", f"primer {sequenceRecord.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
@@ -88,7 +90,7 @@ def anealPrimers( ):
                             Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
                             return
                     else:  
-                        print("Testing 3to5",strandRegularRecord.seq)                 
+                        # print("Testing 3to5",strandRegularRecord.seq)                 
                         overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq, minOverlapLength=minOverlapLength)                      
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
                             messagebox.showinfo("Problem", f"primer {sequenceRecord.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
@@ -100,7 +102,7 @@ def anealPrimers( ):
                             Model.modelInstance.sequenceRecordList.insert(s,primRec)    
                             return                  
 
-    
+
 
 
 def elongate( ):

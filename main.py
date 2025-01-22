@@ -23,13 +23,12 @@ class UiApp:
         canvasFrame = tk.Frame(self.root)
         canvasFrame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         # Create a canvas
-        self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=450)
+        self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=500)
         # Create a horizontal scrollbar
         self.hScrollbar = tk.Scrollbar(canvasFrame, orient="horizontal", command=self.canvas.xview)
         self.canvas.config(xscrollcommand=self.hScrollbar.set)
         # Create a vertical scrollbar        
         self.vScrollbar = tk.Scrollbar(canvasFrame, orient="vertical", command=self.canvas.yview)
-        self.canvas.config(xscrollcommand=self.hScrollbar.set)
         self.canvas.config(yscrollcommand=self.vScrollbar.set)
         # Pack the canvas and scrollbar
         self.canvas.grid(row=0, column=0, sticky="nsew")

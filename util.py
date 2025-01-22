@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import no_type_check  
 from PIL import ImageGrab
+import bisect
 #
 from Bio.SeqRecord import SeqRecord
 from wrappers import MySeqRecord
@@ -72,25 +73,25 @@ def loadModel(default:False, append=False):
 	# Model.modelInstance.dumpModel("in main")
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
-def findNonOverlappingRegions(longString, locations)->list[tuple[int,int]]:
-    # Initialize an empty list to store non-overlapping regions
-    nonOverlappingRegions:list[tuple[int,int]] = []
-    # Assume that the string starts from index 0
-    currentEnd = 0
-    stringLength: int = len(longString)
-    for start, end in locations:
-        # If there is a gap between the current end and the start of the next substring, add the gap as a region
-        if start > currentEnd:
-            nonOverlappingRegions.append((currentEnd, start))
-        # Update the currentEnd to be the maximum of the currentEnd and the current substring's end
-        currentEnd: int = max(currentEnd, end)
-    # If there's any remaining region after the last substring, add it
-    if currentEnd < stringLength:
-        nonOverlappingRegions.append((currentEnd, stringLength))    
-    return nonOverlappingRegions
+def findBoringRegions(longString, locations, extraLocation=None)->list[tuple[int,int]]:
+	# Initialize an empty list to store non-overlapping regions
+	boringRegions:list[tuple[int,int]] = []
+	# Assume that the string starts from index 0
+	currentEnd = 0
+	stringLength: int = len(longString)
+	for start, end in locations:
+		# If there is a gap between the current end and the start of the next substring, add the gap as a region
+		if start > currentEnd:
+			boringRegions.append((currentEnd, start))
+		# Update the currentEnd to be the maximum of the currentEnd and the current substring's end
+		currentEnd: int = max(currentEnd, end)
+	# If there's any remaining region after the last substring, add it
+	if currentEnd < stringLength:
+		boringRegions.append((currentEnd, stringLength))    
+	return boringRegions
 
-def isIndexOverlapping( index, nonOverlappingRegions): 
-	return not any(start <= index < end for start, end in nonOverlappingRegions)		
+def isExcitingLetterIndex( index, boringRegions): 
+	return not any(start <= index < end for start, end in boringRegions)		
 
 # def drawCanvasCircle(canvas:Canvas):
 #         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -157,7 +158,7 @@ def printRed(message:str):
 # 		successFlag=False
 # 	return successFlag
 
-def adjustCachedFeatureLocations(i:int, record:MySeqRecord):
+def shiftLeftShrinkedFeaturesLocations(i:int, record:MySeqRecord):
 	shrinkedFeatures=record.shrinkedFeatures
 	for f in range(len(shrinkedFeatures)):		
 		if record.features[f].location.start >i:
@@ -207,6 +208,12 @@ def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 		color=color, font=font, upsideDownLetter=upsideDownLetter)
 		x += baseRectangleSymbolXPixelSize # Move to the next position
 	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	def enhancedButtonAction(event: tk.Event) -> None:
+		eb.handle_click(event)
+
+	# Create labels using the createLabel method
+	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:2], 0, yStart, enhancedButtonAction, labelHeightPx=bandYEnd-yStart)	
+
 	return  x,bandYEnd
 
 def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int)->int:
@@ -226,7 +233,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 		mySequenceRecord.shrinkedFeatures= deepcopy(mySequenceRecord.features)
 	dnaSequenceStr=seqToString(seq)
 	if mySequenceRecord.features:
-		nonOverlappingRegions:list[tuple[int,int]]=findNonOverlappingRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in mySequenceRecord.features])
+		nonOverlappingRegions:list[tuple[int,int]]=findBoringRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in mySequenceRecord.features])
 	spamCount=1
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	for i in range(len(dnaSequenceStr)):
@@ -234,7 +241,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 		if mySequenceRecord.isPrimer:
 			overlapping=True
 		else:	
-			overlapping: bool=isIndexOverlapping(i, nonOverlappingRegions)
+			overlapping: bool=isExcitingLetterIndex(i, nonOverlappingRegions)
 		if overlapping==True:
 			spamCount=0
 		if not shrink or spamCount<=3:
@@ -255,8 +262,8 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 			spamCount+=1
 			x += baseRectangleSymbolXPixelSize # Move to the next position
 		elif shrink:
-			# skip a letter at intex i
-			adjustCachedFeatureLocations(i, record=mySequenceRecord )
+			# skip a letter at index i so decrease by 1 all the following locations
+			shiftLeftShrinkedFeaturesLocations(i, record=mySequenceRecord )
 
 	# Replace the placeholder with the call to the new method
 	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
@@ -265,12 +272,11 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 		eb.handle_click(event)
 
 	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description, 0, yStart, enhancedButtonAction, labelHeightPx=bandYEnd-yStart)	
+	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:2], 0, yStart, enhancedButtonAction, labelHeightPx=bandYEnd-yStart)	
 	return  x,bandYEnd
 
 #calculate the yop relative Ys for features and primers and the final y
 def calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
-	canvas.create_line(xStart,yStart,xStart+40,yStart, fill="white")
 	if mySequenceRecord.fiveTo3:
 		featureYStart=yStart+verticalSequenceSpacing
 		sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize

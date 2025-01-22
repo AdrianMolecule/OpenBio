@@ -1,11 +1,11 @@
 from re import S
 from Bio.Seq import Seq
 from typing import Optional
+from typing import Union
 
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import MutableSeq
-from Bio.Seq import Seq
-from typing import Union
+from Bio.SeqFeature import SeqFeature
 
 class MySeqRecord(SeqRecord):
 
@@ -21,7 +21,7 @@ class MySeqRecord(SeqRecord):
         self.fiveTo3 = fiveTo3
         self.xStartOffset=0        
         self.hybridizedTo:MySeqRecord=None
-        self.shrinkedFeatures=None
+        self.shrinkedFeatures:list[SeqFeature]=None
 
     def __str__(self):
             # Customize how the item is printed

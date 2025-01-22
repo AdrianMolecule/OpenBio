@@ -3,7 +3,7 @@ XX
 AC   ;
 XX
 DT   05-JAN-2025 (Rel. 1, Created)
-DT   19-JAN-2025 (Rel. 1, Last updated, Version 1)
+DT   22-JAN-2025 (Rel. 1, Last updated, Version 1)
 XX
 DE   testAdrian.
 XX
@@ -16,7 +16,7 @@ RN   [1]
 RP   1 to 955
 RA   .
 RT   "Direct Submission"
-RL   Exported Jan 19, 2025 from SnapGene 8.0.1
+RL   Exported Jan 22, 2025 from SnapGene 8.0.1
 RL   https://www.snapgene.com
 XX
 FH   Key             Location/Qualifiers
@@ -25,7 +25,7 @@ FT   primer_bind     20..37
 FT                   /label=Primer 1 Bind
 FT                   /label=Primer 1
 FT   primer_bind     complement(57..76)
-FT                   /label=F2PrimerBind
+FT                   /label=F3PrimerBind
 FT                   /label=Primer 2
 FT   misc_feature    140..160
 FT                   /label=Feature arrow Right

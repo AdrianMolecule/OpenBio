@@ -90,8 +90,11 @@ def findBoringRegions(longString, locations, extraLocation=None)->list[tuple[int
 		boringRegions.append((currentEnd, stringLength))    
 	return boringRegions
 
-def isExcitingLetterIndex( index, boringRegions): 
-	return not any(start <= index < end for start, end in boringRegions)		
+def isExcitingLetterIndex( index, boringRegions, potentialAnealedPrimer=None): 
+	exciting= not any(start <= index < end for start, end in boringRegions)		
+	if not exciting and potentialAnealedPrimer:
+		exciting=potentialAnealedPrimer.features[0].location.start <= index < potentialAnealedPrimer.features[0].location.end
+	return exciting		
 
 # def drawCanvasCircle(canvas:Canvas):
 #         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -170,6 +173,9 @@ def shiftLeftShrinkedFeaturesLocations(i:int, record:MySeqRecord):
 				shrinkedFeatures[f].location=CompoundLocation(parts)
 			else:
 				shrinkedFeatures[f].location=shrinkedFeatures[f].location-1
+	if record.hybridizedTo:
+		if record.hybridizedTo.features[0].location.start >i:
+			record.hybridizedTo.features[0].location=record.hybridizedTo.features[0].location-1
 
 #draw features from original or cached features
 def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, xStart: int, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool):
@@ -231,6 +237,8 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 	seq:Seq=mySequenceRecord.seq
 	if shrink:
 		mySequenceRecord.shrinkedFeatures= deepcopy(mySequenceRecord.features)
+		if mySequenceRecord.hybridizedTo:
+			mySequenceRecord.gostFeatures= deepcopy(mySequenceRecord.features)
 	dnaSequenceStr=seqToString(seq)
 	if mySequenceRecord.features:
 		nonOverlappingRegions:list[tuple[int,int]]=findBoringRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in mySequenceRecord.features])
@@ -238,21 +246,18 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
-		if mySequenceRecord.isPrimer:
-			overlapping=True
-		else:	
-			overlapping: bool=isExcitingLetterIndex(i, nonOverlappingRegions)
-		if overlapping==True:
+		excitingLetter: bool=isExcitingLetterIndex(i, nonOverlappingRegions, mySequenceRecord.hybridizedTo)
+		if excitingLetter==True:
 			spamCount=0
 		if not shrink or spamCount<=3:
 			color=None
 			if not coloredBases:
 				if not shrink:
 					color="white"
-				elif not overlapping:
+				elif not excitingLetter:
 					color="grey"
 			else:
-				if shrink and not overlapping:
+				if shrink and not excitingLetter:
 					color="grey"
 				else:
 					color =gl.prefs.get_preference_value(letter)

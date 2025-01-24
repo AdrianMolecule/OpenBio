@@ -2,7 +2,7 @@ from Bio.Seq import MutableSeq, Seq
 from Bio.SeqRecord import SeqRecord
 
 from util import *
-from wrappers import MySeqRecord
+from myseqrecord import MySeqRecord
 
 class PrimerUtils:
 
@@ -33,23 +33,23 @@ class PrimerUtils:
         return list(overlapStartsEnds), largestOverlaps, largestOverlapInShorts
 
 
+def main():
+    targetDnaSequence:Seq =         Seq("aaAATTccGGCCa")# 3To5
+    uncomplementedPrimerRecord:Seq =Seq("ttttAATTaGGCt") # and this one complemented looks like aaaaTTAAtCCGa
+    complementedPrimerSeq=uncomplementedPrimerRecord.complement()
 
-targetDnaSequence:Seq =         Seq("aaAATTccGGCCa")# 3To5
-uncomplementedPrimerRecord:Seq =Seq("ttttAATTaGGCt") # and this one complemented looks like aaaaTTAAtCCGa
-complementedPrimerSeq=uncomplementedPrimerRecord.complement()
+    minOverlapLength = 3
+    overlaps, largestInStrand, largestInPrimer = PrimerUtils.findPrimerOverlaps(targetDnaSequence, complementedPrimerSeq, minOverlapLength)
+    print("targetDnaSequence:", targetDnaSequence)
+    print("uncomplementedPrimerRecord:", uncomplementedPrimerRecord)
+    print("primerSeq:", complementedPrimerSeq)
+    print("Overlaps:", overlaps)
+    print("largest:", largestInStrand)
+    if largestInStrand:
+        print("Largest Overlaps in targetDnaSequence:", largestInStrand, seqToString(targetDnaSequence)[largestInStrand[0][0]:largestInStrand[0][1]] )
+        print("Largest Overlaps in primer:", largestInPrimer, seqToString(targetDnaSequence)[largestInPrimer[0][0]:largestInPrimer[0][1]] )
 
-minOverlapLength = 3
-overlaps, largestInStrand, largestInPrimer = findPrimerOverlaps(targetDnaSequence, complementedPrimerSeq, minOverlapLength)
-print("targetDnaSequence:", targetDnaSequence)
-print("uncomplementedPrimerRecord:", uncomplementedPrimerRecord)
-print("primerSeq:", complementedPrimerSeq)
-print("Overlaps:", overlaps)
-print("largest:", largestInStrand)
-if largestInStrand:
-    print("Largest Overlaps in targetDnaSequence:", largestInStrand, seqToString(targetDnaSequence)[largestInStrand[0][0]:largestInStrand[0][1]] )
-    print("Largest Overlaps in primer:", largestInPrimer, seqToString(targetDnaSequence)[largestInPrimer[0][0]:largestInPrimer[0][1]] )
-
-
+main()
 
 
     

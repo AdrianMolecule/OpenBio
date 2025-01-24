@@ -2,7 +2,7 @@ from Bio.Seq import MutableSeq, Seq
 from Bio.SeqRecord import SeqRecord
 
 from util import *
-from wrappers import MySeqRecord
+from myseqrecord import MySeqRecord
 
 class PrimerUtils:
 

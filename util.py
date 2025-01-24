@@ -1,5 +1,6 @@
 """Utility methods"""
 from copy import deepcopy
+from multiprocessing import log_to_stderr
 from tkinter import Canvas, Button
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
@@ -9,17 +10,18 @@ from pathlib import Path
 from typing import no_type_check  
 from PIL import ImageGrab
 import bisect
+from bitarray import bitarray
 #
 from Bio.SeqRecord import SeqRecord
-from wrappers import MySeqRecord
+from myseqrecord import MySeqRecord
 from Bio.Seq import Seq
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
-# from upsideDownText import UpsideDownText
 # mine
 import gl
 from model import Model
 from enhancedbutton import EnhancedButton
+
 #######
 # some 'constants' that can be changed if push comes to shove !
 # some initial values that might remain constant
@@ -27,24 +29,246 @@ from enhancedbutton import EnhancedButton
 horizontalPixelsMargin=2 # head room between the base letter and it's holding box
 
 def drawCanvas(canvas:Canvas )->int:
+	buildMask()
 	yPos:int = 0  # y is 0 at top and increases downwards	
 	# Clear any previous drawings
 	canvas.delete("all")
 	sequenceWidth=0
 	sequenceIndex=0
-	for sequenceRecord in Model.modelInstance.sequenceRecordList:
+	yFinal=0
+	for i, sequenceRecord in enumerate(Model.modelInstance.sequenceRecordList):
 		if not sequenceRecord.isPrimer:
-			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord, gl.canvasHorizontalMargin,yPos)
+			newSequenceWidth,yFinal=drawStrand(canvas, sequenceRecord,yPos)
 		else:# primer
-				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord, gl.canvasHorizontalMargin,yPos)
+				newSequenceWidth,yFinal=drawPrimer(canvas, sequenceRecord,yPos)
+				lastY=yPos
+				if i>0 and Model.modelInstance.sequenceRecordList[i-1].isPrimer and  Model.modelInstance.sequenceRecordList[i-1].hybridizedToStrand and sequenceRecord.hybridizedToStrand and Model.modelInstance.sequenceRecordList[i-1].hybridizedToStrand.uniqueId==sequenceRecord.hybridizedToStrand.uniqueId:
+					yFinal=yPos# do not advance if 2 primers are on the same strand
 		if newSequenceWidth>sequenceWidth:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
 		sequenceIndex+=1
-	#
+	drawMask(canvas,gl.canvasHorizontalMargin, yFinal)
 	# Adjust the scrollable region based on the length of the string
-	canvas.config(scrollregion=(0, 0, sequenceWidth,yFinal+20))  # Set the scrollable area
+	canvas.config(scrollregion=(0, 0, sequenceWidth, yFinal+40))  # Set the scrollable area
 	return 2*gl.canvasHorizontalMargin+sequenceWidth
+
+#draw features from original or cached features
+def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool):
+	for feature in mySequenceRecord.features:
+		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
+			loc: Location = feature.location
+			if shrink:
+				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+gl.maskSkipped[loc.start])
+			else:
+				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * loc.start
+			if feature.qualifiers.get("label"):
+				text=feature.qualifiers.get("label")[0]
+			else:	
+				text=feature.type
+			drawTextInRectangle(text, canvas, 	x, yStart, 
+					   baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 
+					'white', loc.end - loc.start, font)
+
+def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:
+	# xStart:int,gl.canvasHorizontalMargin
+	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
+	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
+	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
+	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
+	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
+	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
+	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	upsideDownLetter:bool=not mySequenceRecordPrimer.fiveTo3 and rotated
+	dnaSequenceStr=seqToString(mySequenceRecordPrimer.seq)	
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecordPrimer,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
+	i=0
+	for i in range(len(dnaSequenceStr)):
+		letter: str=dnaSequenceStr[i]		
+		if shrink and mySequenceRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
+			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
+				# x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+gl.maskSkipped[loc.start])
+		else:
+			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
+		color="white" if not coloredBases else gl.prefs.get_preference_value(letter)
+		drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+		color=color, font=font, upsideDownLetter=upsideDownLetter)
+		# x += baseRectangleSymbolXPixelSize # Move to the next position
+	drawFeatures(canvas, mySequenceRecordPrimer, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	if shrink:
+		maxX=gl.canvasHorizontalMargin + (len(dnaSequenceStr)-(gl.maskSkipped[i+mySequenceRecordPrimer.xStartOffsetAsLetters])*baseRectangleSymbolXPixelSize)
+	else:	
+		maxX=gl.canvasHorizontalMargin + (len(dnaSequenceStr)-(gl.maskSkipped[i])*baseRectangleSymbolXPixelSize)
+		
+	# Create labels using the createLabel method
+	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecordPrimer.description[:2], 0, yStart,mySequenceRecordPrimer,  labelHeightPx=bandYEnd-yStart)	
+	return  maxX,bandYEnd
+
+def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
+	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
+	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
+	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
+	# gl.prefs.dump()
+	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
+	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
+	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
+	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
+	x: int=gl.canvasHorizontalMargin		
+	seq:Seq=mySequenceRecord.seq
+	dnaSequenceStr=seqToString(seq)
+	spamCount=0
+	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
+	for i in range(len(dnaSequenceStr)):
+		letter: str=dnaSequenceStr[i]
+		if shrink:
+			excitingLetter: bool= gl.mask[i]
+			if excitingLetter==True:
+				spamCount=0
+				color =gl.prefs.get_preference_value(letter)
+			else:
+				color="grey"
+				spamCount+=1
+			if spamCount<=3:# keep 3 letters
+				drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+				color=color, font=font, upsideDownLetter=upsideDownLetter)
+				x += baseRectangleSymbolXPixelSize # Move to the next position	
+		else: # NO SHRINK
+			if not coloredBases:
+				color="white"
+			else:
+				color =gl.prefs.get_preference_value(letter)
+			drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+			color=color, font=font, upsideDownLetter=upsideDownLetter)
+			x += baseRectangleSymbolXPixelSize # Move to the next position
+
+	# Replace the placeholder with the call to the new method
+	drawFeatures(canvas, mySequenceRecord, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	
+	# Create labels using the createLabel method
+	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:2], 0, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
+	return  x,bandYEnd
+
+#calculate the yop relative Ys for features and primers and the final y
+def calculateYs(mySequenceRecord, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
+	if mySequenceRecord.fiveTo3:
+		featureYStart=yStart+verticalSequenceSpacing
+		sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
+		if mySequenceRecord.hybridizedToStrand or mySequenceRecord.hybridizedToPrimer:
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+		else:
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+	else: #  3 to 5
+		if mySequenceRecord.hybridizedToStrand or mySequenceRecord.hybridizedToPrimer:
+			sequenceYStart=yStart
+			featureYStart=yStart+baseRectangleSymbolYPixelSize
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+		else:
+			sequenceYStart=yStart+verticalSequenceSpacing
+			featureYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize			
+			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+	return featureYStart,sequenceYStart,bandEnd
+
+def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, charsLength,font,rotated=None):
+	canvas.create_rectangle( xLeft, yTop, xLeft + charsLength*baseRectangleSymbolXPixelSize ,yTop + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
+	if rotated:
+		# The default anchor for text in Tkinter's Canvas.create_text() method is "center". T
+		canvas.create_text(xLeft+ charsLength*baseRectangleSymbolXPixelSize/2, yTop+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black", angle=180)	
+	else:
+		canvas.create_text(xLeft+ charsLength*baseRectangleSymbolXPixelSize/2, yTop+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black")	
+	# upside_down_text = tk.Text(canvas, width=gl.fontSize, height=1 , wrap=tk.WORD, bd=1, relief="solid", highlightbackground="red",font, padx=0, pady=-3) # height is the number of lines
+	# upside_down_text.insert(tk.END, tex)  # Insert the 
+	# textpushDown=baseRectangleSymbolYPixelSize+10
+	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
+	
+# Define functions to draw each DNA base x,y relative from upper 	left corner
+def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, upsideDownLetter=None):
+	canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
+	if upsideDownLetter:
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
+	else:
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
+
+# Define functions to draw each DNA base x,y relative from upper left corner
+def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, length,rotated=None):
+	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
+	if rotated:
+		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black", angle=180)	
+	else:
+		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black")	
+
+# Define functions to draw each DNA base x,y relative from upper left corner
+def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, coloredBases, rotated=None):
+	if coloredBases==False:
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill="white", outline="black" )
+	else:
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
+	if rotated:
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
+	else:
+		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")	
+
+def buildMask():# cell is True is visible
+	# for rec in Model.modelInstance.sequenceRecordList:
+	size: int= max((len((rec.seq)) for rec in  Model.modelInstance.sequenceRecordList), default=0)
+	gl.mask=[0] * size
+	gl.maskSkipped=[0] * size
+	# skipped:int=0
+	for rec in Model.modelInstance.sequenceRecordList:
+		rec:MySeqRecord
+		if not rec.isPrimer or (rec.isPrimer and rec.hybridizedToStrand):# we use the features on primers only if the primers are positioned on strands
+			for feature in rec.features:
+				for cell in range(feature.location.start,feature.location.end):
+					# skipped+=1
+					gl.mask[cell]=1
+				# feature.qualifiers.update({"skipped": skipped})
+	skip:int=0
+	updateMaskSkipped()
+
+def updateMaskSkipped():# todo call it only if skipped and the current one is None
+	visibleSpamCount = 0
+	skip = 0
+	for i, _ in enumerate(gl.mask):
+		excitingLetter: bool = gl.mask[i]
+		if excitingLetter:
+			visibleSpamCount = 0
+		else:
+			visibleSpamCount += 1
+			if visibleSpamCount > 3:  # to keep 3 letters
+				skip += 1
+		gl.maskSkipped[i] = -skip  # gray but visible
+
+def printCanvas(canvas):
+	# filePath=str(Path(__file__).resolve().parent)+"/junk"
+	# canvas.postscript(file=filePath, colormode='color')
+ 	# # Get the canvas's total scrollable area (scrollregion)
+    scrollregion = canvas.bbox("all")  # Returns (x1, y1, x2, y2)    
+    if scrollregion:
+        x1, y1, x2, y2 = scrollregion
+        
+        # Get the position of the canvas on the screen
+        canvas_x = canvas.winfo_rootx()
+        canvas_y = canvas.winfo_rooty()
+
+        # Calculate the full area of the canvas to capture
+        capture_x1 = canvas_x + x1
+        capture_y1 = canvas_y + y1
+        capture_x2 = canvas_x + x2
+        capture_y2 = canvas_y + y2
+
+        # Capture the entire scrollable area of the canvas
+        img = ImageGrab.grab(bbox=(capture_x1, capture_y1, capture_x2, capture_y2), all_screens=True)
+        
+        # Ask the user for a file name and save the image
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+        if file_path:
+            img.save(file_path)
+            print(f"Canvas content saved to {file_path}")
+    else:
+        print("Canvas has no scrollable content.")
+
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
 def loadFile(default=False)->tuple[list[MySeqRecord],str]:	
@@ -72,29 +296,6 @@ def loadModel(default:False, append=False):
 		Model.modelInstance=newModel
 	# Model.modelInstance.dumpModel("in main")
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
-
-def findBoringRegions(longString, locations, extraLocation=None)->list[tuple[int,int]]:
-	# Initialize an empty list to store non-overlapping regions
-	boringRegions:list[tuple[int,int]] = []
-	# Assume that the string starts from index 0
-	currentEnd = 0
-	stringLength: int = len(longString)
-	for start, end in locations:
-		# If there is a gap between the current end and the start of the next substring, add the gap as a region
-		if start > currentEnd:
-			boringRegions.append((currentEnd, start))
-		# Update the currentEnd to be the maximum of the currentEnd and the current substring's end
-		currentEnd: int = max(currentEnd, end)
-	# If there's any remaining region after the last substring, add it
-	if currentEnd < stringLength:
-		boringRegions.append((currentEnd, stringLength))    
-	return boringRegions
-
-def isExcitingLetterIndex( index, boringRegions, potentialAnealedPrimer=None): 
-	exciting= not any(start <= index < end for start, end in boringRegions)		
-	if not exciting and potentialAnealedPrimer:
-		exciting=potentialAnealedPrimer.features[0].location.start <= index < potentialAnealedPrimer.features[0].location.end
-	return exciting		
 
 # def drawCanvasCircle(canvas:Canvas):
 #         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -131,8 +332,8 @@ def loadAndSeparateEmblSequences(emblName:str)->list[MySeqRecord]:
 			threeTo5Record.seq=threeTo5Record.seq.complement()
 			myRecord35=MySeqRecord(threeTo5Record,False, False, primer=False)
 			sequenceRecordList.append(myRecord35)		
-			myRecord53.hybridizedTo=myRecord35
-			myRecord35.hybridizedTo=myRecord53
+			myRecord53.hybridizedToStrand=myRecord35
+			myRecord35.hybridizedToStrand=myRecord53
 	return 	sequenceRecordList 
 
 def loadFastas():
@@ -161,210 +362,24 @@ def printRed(message:str):
 # 		successFlag=False
 # 	return successFlag
 
-def shiftLeftShrinkedFeaturesLocations(i:int, record:MySeqRecord):
-	shrinkedFeatures=record.shrinkedFeatures
-	for f in range(len(shrinkedFeatures)):		
-		if record.features[f].location.start >i:
-			if  isinstance(shrinkedFeatures[f].location,CompoundLocation):
-				parts = list()
-				for loc in shrinkedFeatures[f].location.parts:
-					loc=loc-1
-					parts.append(loc)
-				shrinkedFeatures[f].location=CompoundLocation(parts)
-			else:
-				shrinkedFeatures[f].location=shrinkedFeatures[f].location-1
-	if record.hybridizedTo:
-		if record.hybridizedTo.features[0].location.start >i:
-			record.hybridizedTo.features[0].location=record.hybridizedTo.features[0].location-1
 
-#draw features from original or cached features
-def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, xStart: int, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool):
-	if mySequenceRecord.isPrimer:
-		source: list[SeqFeature] = mySequenceRecord.features
-	else:# regular sequences
-		if shrink:
-			source = mySequenceRecord.shrinkedFeatures
-		else:
-			source: list[SeqFeature] = mySequenceRecord.features
-	for feature in source:
-		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
-			loc: Location = feature.location
-			drawTextInRectangle(feature.qualifiers.get("label")[0], canvas, xStart + baseRectangleSymbolXPixelSize * loc.start, yStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 'white', loc.end - loc.start, font)
 
-def drawPrimer(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int)->int:
+def drawMask(canvas:Canvas,xStart, yStart)->int:
+	if not gl.debug:
+		return None
 	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
-	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
-	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
-	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
-	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	fontName=gl.prefs.get_preference_value(preference_name="fontName")
+	font:tuple[str,int]=(fontName,6)
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
-	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
-	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	xStart=xStart	+mySequenceRecord.xStartOffset*	baseRectangleSymbolXPixelSize
-	x: int=xStart
-	seq:Seq=mySequenceRecord.seq
-	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
-	dnaSequenceStr=seqToString(seq)	
-	featureYStart, sequenceYStart, bandYEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
-	i=0
-	for i in range(len(dnaSequenceStr)):
-		letter: str=dnaSequenceStr[i]
-		color="white" if not coloredBases else gl.prefs.get_preference_value(letter)
-		drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
-		color=color, font=font, upsideDownLetter=upsideDownLetter)
-		x += baseRectangleSymbolXPixelSize # Move to the next position
-	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
-	def enhancedButtonAction(event: tk.Event) -> None:
-		eb.handle_click(event)
+	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
 
-	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:2], 0, yStart, enhancedButtonAction, labelHeightPx=bandYEnd-yStart)	
-
-	return  x,bandYEnd
-
-def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord,xStart:int, yStart:int)->int:
-	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
-	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
-	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
-	# gl.prefs.dump()
-	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
-	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
-	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
-	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
-	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	featureYStart, sequenceYStart, bandYEnd = calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
-	x: int=xStart		
-	seq:Seq=mySequenceRecord.seq
-	if shrink:
-		mySequenceRecord.shrinkedFeatures= deepcopy(mySequenceRecord.features)
-		if mySequenceRecord.hybridizedTo:
-			mySequenceRecord.gostFeatures= deepcopy(mySequenceRecord.features)
-	dnaSequenceStr=seqToString(seq)
-	if mySequenceRecord.features:
-		nonOverlappingRegions:list[tuple[int,int]]=findBoringRegions(dnaSequenceStr, [(feature.location.start, feature.location.end) for feature in mySequenceRecord.features])
-	spamCount=1
-	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
-	for i in range(len(dnaSequenceStr)):
-		letter: str=dnaSequenceStr[i]
-		excitingLetter: bool=isExcitingLetterIndex(i, nonOverlappingRegions, mySequenceRecord.hybridizedTo)
-		if excitingLetter==True:
-			spamCount=0
-		if not shrink or spamCount<=3:
-			color=None
-			if not coloredBases:
-				if not shrink:
-					color="white"
-				elif not excitingLetter:
-					color="grey"
-			else:
-				if shrink and not excitingLetter:
-					color="grey"
-				else:
-					color =gl.prefs.get_preference_value(letter)
-
-			drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
-			color=color, font=font, upsideDownLetter=upsideDownLetter)
-			spamCount+=1
-			x += baseRectangleSymbolXPixelSize # Move to the next position
-		elif shrink:
-			# skip a letter at index i so decrease by 1 all the following locations
-			shiftLeftShrinkedFeaturesLocations(i, record=mySequenceRecord )
-
-	# Replace the placeholder with the call to the new method
-	drawFeatures(canvas, mySequenceRecord, xStart, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
-	
-	def enhancedButtonAction(event: tk.Event) -> None:
-		eb.handle_click(event)
-
-	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:2], 0, yStart, enhancedButtonAction, labelHeightPx=bandYEnd-yStart)	
-	return  x,bandYEnd
-
-#calculate the yop relative Ys for features and primers and the final y
-def calculateYs(canvas, mySequenceRecord, xStart, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
-	if mySequenceRecord.fiveTo3:
-		featureYStart=yStart+verticalSequenceSpacing
-		sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
-		if mySequenceRecord.hybridizedTo:
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
-		else:
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
-	else: #  3 to 5
-		if mySequenceRecord.hybridizedTo:
-			sequenceYStart=yStart
-			featureYStart=yStart+baseRectangleSymbolYPixelSize
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
-		else:
-			sequenceYStart=yStart+verticalSequenceSpacing
-			featureYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize			
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
-	return featureYStart,sequenceYStart,bandEnd
-
-def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, length,font,rotated=None):
-	canvas.create_rectangle( xLeft, yTop, xLeft + length*baseRectangleSymbolXPixelSize ,yTop + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
-	if rotated:
-		# The default anchor for text in Tkinter's Canvas.create_text() method is "center". T
-		canvas.create_text(xLeft+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, yTop+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black", angle=180)	
-	else:
-		canvas.create_text(xLeft+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, yTop+baseRectangleSymbolYPixelSize/2 , text=tex, font=font, fill="black")	
-	# upside_down_text = tk.Text(canvas, width=gl.fontSize, height=1 , wrap=tk.WORD, bd=1, relief="solid", highlightbackground="red",font, padx=0, pady=-3) # height is the number of lines
-	# upside_down_text.insert(tk.END, tex)  # Insert the 
-	# textpushDown=baseRectangleSymbolYPixelSize+10
-	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
-	
-# Define functions to draw each DNA base x,y relative from upper 	left corner
-def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, upsideDownLetter=None):
-	canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
-	# 
-	if upsideDownLetter:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
-	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
-
-# Define functions to draw each DNA base x,y relative from upper left corner
-def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, length,rotated=None):
-	canvas.create_rectangle( x, y, x + length*baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
-	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black", angle=180)	
-	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize+ length*baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2 , text=base, font=font, fill="black")	
-
-# Define functions to draw each DNA base x,y relative from upper left corner
-def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, coloredBases, rotated=None):
-	if coloredBases==False:
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill="white", outline="black" )
-	else:
-		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=col, outline="black" )
-	if rotated:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)	
-	else:
-		canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")	
-
-def printCanvas(canvas):
-	# filePath=str(Path(__file__).resolve().parent)+"/junk"
-	# canvas.postscript(file=filePath, colormode='color')
- 	# # Get the canvas's total scrollable area (scrollregion)
-    scrollregion = canvas.bbox("all")  # Returns (x1, y1, x2, y2)    
-    if scrollregion:
-        x1, y1, x2, y2 = scrollregion
-        
-        # Get the position of the canvas on the screen
-        canvas_x = canvas.winfo_rootx()
-        canvas_y = canvas.winfo_rooty()
-
-        # Calculate the full area of the canvas to capture
-        capture_x1 = canvas_x + x1
-        capture_y1 = canvas_y + y1
-        capture_x2 = canvas_x + x2
-        capture_y2 = canvas_y + y2
-
-        # Capture the entire scrollable area of the canvas
-        img = ImageGrab.grab(bbox=(capture_x1, capture_y1, capture_x2, capture_y2), all_screens=True)
-        
-        # Ask the user for a file name and save the image
-        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
-        if file_path:
-            img.save(file_path)
-            print(f"Canvas content saved to {file_path}")
-    else:
-        print("Canvas has no scrollable content.")
+	y=yStart	
+	x=xStart
+	for i, bit in enumerate(gl.mask):
+		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , 
+						  fill="Yellow" if gl.mask[i] else "grey", outline="black" )
+		drawTextInRectangle( str((-gl.maskSkipped[i])),canvas, x, y+baseRectangleSymbolYPixelSize,
+					  baseRectangleSymbolXPixelSize , baseRectangleSymbolYPixelSize , 
+						  "red",1,font)	
+		x+=	baseRectangleSymbolXPixelSize
+	return yStart+2*baseRectangleSymbolYPixelSize		

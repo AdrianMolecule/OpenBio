@@ -72,14 +72,14 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, bas
 
 def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:
 	# xStart:int,gl.canvasHorizontalMargin
-	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
-	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
-	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
-	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
-	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	fontSize:int=gl.prefs.getPreferenceValue(preference_name="fontSize")
+	shrink:int=gl.prefs.getPreferenceValue(preference_name="shrink")	
+	font:tuple[str,int]=(gl.prefs.getPreferenceValue(preference_name="fontName"),fontSize)
+	coloredBases:bool=gl.prefs.getPreferenceValue(preference_name="coloredBases")
+	rotated:bool=gl.prefs.getPreferenceValue(preference_name="rotated")
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
-	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	verticalSequenceSpacing:int=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
 	upsideDownLetter:bool=not mySequenceRecordPrimer.fiveTo3 and rotated
 	dnaSequenceStr=seqToString(mySequenceRecordPrimer.seq)	
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecordPrimer,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
@@ -90,7 +90,7 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
 		else:
 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
-		color="white" if not coloredBases else gl.prefs.get_preference_value(letter)
+		color="white" if not coloredBases else gl.prefs.getPreferenceValue(letter)
 		drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 		color=color, font=font, upsideDownLetter=upsideDownLetter)
 		# x += baseRectangleSymbolXPixelSize # Move to the next position
@@ -105,15 +105,15 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 	return  maxX,bandYEnd
 
 def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
-	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
-	shrink:int=gl.prefs.get_preference_value(preference_name="shrink")	
-	font:tuple[str,int]=(gl.prefs.get_preference_value(preference_name="fontName"),fontSize)
+	fontSize:int=gl.prefs.getPreferenceValue(preference_name="fontSize")
+	shrink:int=gl.prefs.getPreferenceValue(preference_name="shrink")	
+	font:tuple[str,int]=(gl.prefs.getPreferenceValue(preference_name="fontName"),fontSize)
 	# gl.prefs.dump()
-	coloredBases:bool=gl.prefs.get_preference_value(preference_name="coloredBases")
-	rotated:bool=gl.prefs.get_preference_value(preference_name="rotated")
+	coloredBases:bool=gl.prefs.getPreferenceValue(preference_name="coloredBases")
+	rotated:bool=gl.prefs.getPreferenceValue(preference_name="rotated")
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
-	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
+	verticalSequenceSpacing:int=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
 	x: int=gl.canvasHorizontalMargin+ (mySequenceRecord.xStartOffsetAsLetters)*baseRectangleSymbolXPixelSize	
 	seq:Seq=mySequenceRecord.seq
@@ -132,7 +132,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 			excitingLetter: bool= gl.mask[i]
 			if excitingLetter==True:
 				spamCount=0
-				color =gl.prefs.get_preference_value(letter)
+				color =gl.prefs.getPreferenceValue(letter)
 			else:
 				color="grey"
 				spamCount+=1
@@ -144,7 +144,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 			if not coloredBases:
 				color="white"
 			else:
-				color =gl.prefs.get_preference_value(letter)
+				color =gl.prefs.getPreferenceValue(letter)
 			drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 			color=color, font=font, upsideDownLetter=upsideDownLetter)
 			x += baseRectangleSymbolXPixelSize # Move to the next position
@@ -280,7 +280,7 @@ def printCanvas(canvas):
 def loadFile(default=False)->tuple[list[MySeqRecord],str]:	
 	currentDir=str(Path(__file__).resolve().parent)
 	if default:
-		filePath=currentDir+"/samples/"+gl.prefs.get_preference_value("defaultTestFileValue")
+		filePath=currentDir+"/samples/"+gl.prefs.getPreferenceValue("defaultTestFileValue")
 	else:
 		if not gl.debug:
 			filePath = filedialog.askopenfilename(title="Open EMBL File",filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])  
@@ -311,11 +311,11 @@ def loadModel(default:False, append=False):
 #         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
 
 def canvasZoom(zoomin):# 1 for  zoom In or bigger
-    if zoomin!=True and gl.prefs.get_preference_value("fontSize")>3: # ZOOM OUT no to negative font sizes
-            gl.prefs.setFontSize(gl.prefs.get_preference_value("fontSize")-1)    
+    if zoomin!=True and gl.prefs.getPreferenceValue("fontSize")>3: # ZOOM OUT no to negative font sizes
+            gl.prefs.setFontSize(gl.prefs.getPreferenceValue("fontSize")-1)    
             drawCanvas()
     else:   
-        gl.prefs.setFontSize(gl.prefs.get_preference_value("fontSize")+1 )          
+        gl.prefs.setFontSize(gl.prefs.getPreferenceValue("fontSize")+1 )          
         drawCanvas()
 
 def calculateBaseRectangleSymbolXPixelSize(fontSize):
@@ -377,8 +377,8 @@ def printRed(message:str):
 def drawMask(canvas:Canvas,xStart, yStart)->int:
 	if not gl.debug:
 		return None
-	fontSize:int=gl.prefs.get_preference_value(preference_name="fontSize")
-	fontName=gl.prefs.get_preference_value(preference_name="fontName")
+	fontSize:int=gl.prefs.getPreferenceValue(preference_name="fontSize")
+	fontName=gl.prefs.getPreferenceValue(preference_name="fontName")
 	font:tuple[str,int]=(fontName,6)
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels

@@ -16,7 +16,7 @@ class EnhancedButton:
         # Create the label
         label = canvas.create_rectangle(x , y,   x + self.labelWidthPx , y + labelHeightPx,  fill="lightblue", outline="black", width=1)
         # Create text inside the rectangle to represent the label's text
-        text=canvas.create_text(x+self.labelWidthPx//2, y+labelHeightPx//2, text=text, font=("Arial", 12), fill="black")
+        text=canvas.create_text(x+self.labelWidthPx//2, y+labelHeightPx//2, text=text, font=("Arial", 12), angle=90, fill="black")
         from buttoncommands import clickOnSeqRecord
         canvas.tag_bind(label, "<Button-1>", lambda event: clickOnSeqRecord(event, canvas, self.mySeqRecord))
         canvas.tag_bind(text, "<Button-1>",  lambda event: clickOnSeqRecord(event, canvas, self.mySeqRecord))

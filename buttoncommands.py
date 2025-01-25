@@ -41,8 +41,8 @@ def addPrimerHandler(canvas:Canvas)->Seq:
     newRecord.features.append(mandatoryFeature)   
     myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
     leng=len(myRecord.seq) 
-    minLen=gl.prefs.get_preference_value("minPrimerOverlapLength")
-    maxLen=gl.prefs.get_preference_value("maxPrimerLength")
+    minLen=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
+    maxLen=gl.prefs.getPreferenceValue("maxPrimerLength")
     if leng< minLen:
             messagebox.showerror("Invalid Primer", f"primer length: {len} is smaller than minimal primar length {minLen}") 
             return
@@ -67,7 +67,7 @@ def denaturate( canvas:Canvas):
 
 def anealPrimers(canvas:Canvas ):
     found:bool=False
-    minOverlapLength:int=gl.prefs.get_preference_value("minPrimerOverlapLength")
+    minOverlapLength:int=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
     for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
         sequenceRecordPrimer:MySeqRecord
         if sequenceRecordPrimer.isPrimer and not sequenceRecordPrimer.hybridizedToStrand :
@@ -119,20 +119,20 @@ def anealPrimers(canvas:Canvas ):
 
 
 def toggleShrink( canvas:Canvas):
-    p=gl.prefs.get_preference_value(preference_name="shrink")
+    p=gl.prefs.getPreferenceValue(preference_name="shrink")
     if p:
-          gl.prefs.set_preference_value("shrink", False)
+          gl.prefs.setPreferenceValue("shrink", False)
     else:
-          gl.prefs.set_preference_value("shrink", True)
+          gl.prefs.setPreferenceValue("shrink", True)
     drawCanvas(canvas)           
               
 
 def elongate( canvas:Canvas):
-    p=gl.prefs.get_preference_value(preference_name="shrink")
+    p=gl.prefs.getPreferenceValue(preference_name="shrink")
     if p:
-          gl.prefs.set_preference_value("shrink", False)
+          gl.prefs.setPreferenceValue("shrink", False)
     else:
-          gl.prefs.set_preference_value("shrink", True)
+          gl.prefs.setPreferenceValue("shrink", True)
     drawCanvas(canvas)           
               
 def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:

@@ -84,7 +84,7 @@ class UiApp:
                 return row,col+1
         
         self.stepsButtonBar = tk.Frame(self.root)
-        vertSteps=gl.prefs.get_preference_value("verticalSteps")
+        vertSteps=gl.prefs.getPreferenceValue("verticalSteps")
         rowOrCol=0 if vertSteps else 2
         col=1
         self.stepsButtonBar.grid(row=rowOrCol, column=0 if vertSteps else "0", padx=5, pady=3, sticky=("ns" if vertSteps else "ew")) 
@@ -115,19 +115,19 @@ class UiApp:
         fileMenu = Menu(menuBar, tearoff=0)
         fileMenu.add_command(label="Load File", command=lambda:self.loadSequencesHandler())
         menuBar.add_cascade(label="File", menu=fileMenu)
-        # Right menu: Exit
-        exitMenu = Menu(menuBar, tearoff=0)
-        exitMenu.add_command(label="Exit", command=self.exitApplication)
-        menuBar.add_cascade(label="Exit", menu=exitMenu)
         # menu: Preferences
         preferencesMenu = Menu(menuBar, tearoff=0)
         preferencesMenu.add_command(label="Preferences", command=self.updatePreferences)
         menuBar.add_cascade(label="Preferences", menu=preferencesMenu)
+        # Right menu: Exit
+        exitMenu = Menu(menuBar, tearoff=0)
+        exitMenu.add_command(label="Exit", command=self.exitApplication)
+        menuBar.add_cascade(label="Exit", menu=exitMenu)
         # Configuring the root window to use the menu
         root.config(menu=menuBar)   
 
     def updatePreferences(self):
-        gl.prefs.open_preferences_popup()       
+        gl.prefs.openPreferencesPopup()       
 
     def loadSequencesHandler(self)->Seq:
         loadModel(False, append=False)
@@ -147,13 +147,13 @@ class UiApp:
 
     def canvasZoom(self,zoomin):# 1 for  zoom In or bigger
         name="fontSize"
-        oldSize=gl.prefs.get_preference_value(name)
+        oldSize=gl.prefs.getPreferenceValue(name)
         if zoomin!=True and oldSize>3: # ZOOM OUT no to negative font sizes
-                gl.prefs.get_preference_value(name)
-                gl.prefs.set_preference_value(name, oldSize-1)
+                gl.prefs.getPreferenceValue(name)
+                gl.prefs.setPreferenceValue(name, oldSize-1)
                 drawCanvas(self.canvas)
         else:   
-            gl.prefs.set_preference_value(name,oldSize+1 )           
+            gl.prefs.setPreferenceValue(name,oldSize+1 )           
             drawCanvas(self.canvas)
 
 

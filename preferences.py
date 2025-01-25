@@ -54,7 +54,7 @@ class Preferences:
     def closePreferencesPopup(self):
         self.preferencesPopup.destroy()
 
-    def open_preferences_popup(self):
+    def openPreferencesPopup(self):
         def on_select(event):
             selected_index = listbox.curselection()
             prefKeysAsList=list(self.preferences)
@@ -63,23 +63,23 @@ class Preferences:
                 # print("name:",selectedPref.name," end value")
                 # If the selected preference is a nucleotide color (A, T, C, G), directly open the color chooser
                 if selectedPref.name in ['A', 'T', 'C', 'G']: 
-                    self.pick_color(selectedPref, listbox)
+                    self.pickColor(selectedPref, listbox)
                     self.updateCallback()   
                 else:
-                    self.edit_non_color_preference(selectedPref, listbox)
+                    self.editNonColorPreference(selectedPref, listbox)
         self.preferencesPopup = tk.Toplevel(self.root)
         self.preferencesPopup.title("Preferences")
         # Make the preferences window modal
         self.preferencesPopup.grab_set()
         listbox = tk.Listbox(self.preferencesPopup, height=len(self.preferences), width=80, border=1)
         listbox.pack(padx=10, pady=10)
-        self.update_preferences_display(listbox)
+        self.updatePreferencesDisplay(listbox)
         listbox.bind("<Double-1>", on_select)
         close_button = tk.Button(self.preferencesPopup, text="Close", command=self.closePreferencesPopup)
         close_button.pack(pady=5)
 
 
-    def update_preferences_display(self, listbox):
+    def updatePreferencesDisplay(self, listbox):
         """ Refresh the listbox display of preferences inside the popup. """
         listbox.delete(0, tk.END)
         for key, pref in self.preferences.items():
@@ -89,40 +89,40 @@ class Preferences:
             else:
                 listbox.insert(tk.END, f"name: {pref.name}, value: {pref.value}, description: {pref.description}, default: {pref.default_value}")
 
-    def pick_color(self, preference, listbox):
+    def pickColor(self, preference, listbox):
         """ Open the color picker and update the color preference value. """
         color_code = colorchooser.askcolor(title=f"Choose Color for {preference.name}")[1]  # Get color in HEX format
         if color_code:
-            self.update_preference_value(preference, color_code, listbox)
+            self.updatePreferenceValue(preference, color_code, listbox)
 
-    def update_preference_value(self, preference, new_value, listbox):
+    def updatePreferenceValue(self, preference, new_value, listbox):
         """ Update the preference value and refresh the UI. """
         preference.set_value(new_value)
         if listbox:
-            self.update_preferences_display(listbox)  # Update the listbox in the popup
+            self.updatePreferencesDisplay(listbox)  # Update the listbox in the popup
 
-    def edit_non_color_preference(self, preference:Preference, listbox):
+    def editNonColorPreference(self, preference:Preference, listbox):
         def apply_changes(event=None):
             if preference.value_type == bool:
                 new_value = new_value_var.get()
-                self.update_preference_value(preference, new_value, listbox)
+                self.updatePreferenceValue(preference, new_value, listbox)
             else:
                 new_value = entry.get()
-                self.update_preference_value(preference, new_value, listbox)
+                self.updatePreferenceValue(preference, new_value, listbox)
 
             # Update the listbox in the popup and main window after saving
-            self.update_preferences_display(listbox)  # Update the popup's listbox
+            self.updatePreferencesDisplay(listbox)  # Update the popup's listbox
             self.updateCallback()   
             # Do not destroy popup immediately; keep it open and modal
             popup.grab_set()  # Reapply grab_set to ensure it remains modal
             popup.destroy()
             self.preferencesPopup.grab_set() # it seems to have amnesia and forgets it is modal
 
-        def reset_to_default():
+        def resetToDefault():
             preference.reset_to_default()
-            self.update_preference_value(preference, preference.get_value(), listbox)
+            self.updatePreferenceValue(preference, preference.get_value(), listbox)
             # Update the listbox in the popup and main window after reset
-            self.update_preferences_display(listbox)  # Update the popup's listbox
+            self.updatePreferencesDisplay(listbox)  # Update the popup's listbox
             self.updateCallback() 
             popup.grab_set()  # Reapply grab_set to ensure it remains modal            
             popup.destroy()
@@ -155,7 +155,7 @@ class Preferences:
             # No Save button for non-bool preferences, only Reset to Default
             reset_button = tk.Button(popup, text="OK", command=commandCloseEditPopup)
             reset_button.pack(pady=5)
-            reset_button = tk.Button(popup, text="Reset to Default", command=reset_to_default)
+            reset_button = tk.Button(popup, text="Reset to Default", command=resetToDefault)
             reset_button.pack(pady=5)            
 
     # def get_preference_value(self, preference_name):
@@ -163,7 +163,7 @@ class Preferences:
     #     p:Preference = self.preferences.get(preference_name)
     #     return p.get_value()
 
-    def get_preference_value(self, preference_name):
+    def getPreferenceValue(self, preference_name):
         # Find the preference by name and return its current value
         p:Preference = self.preferences.get(preference_name)
         if p:
@@ -179,7 +179,7 @@ class Preferences:
         messagebox.showerror("Preference Not Found", f"Preference with name '{preference_name}' not found.")
         return None
     
-    def set_preference_value(self, preference_name, value):
+    def setPreferenceValue(self, preference_name, value):
         # Find the preference by name and return its current value
         p:Preference = self.preferences.get(preference_name)
         p.set_value(value)
@@ -225,12 +225,12 @@ def main():
     root.title("Preferences App")
 
     preferences=Preferences(root)
-    open_button = tk.Button(root, text="Open Preferences", command=preferences.open_preferences_popup)
-    sh=gl.prefs.get_preference_value(preference_name="shrink")
+    open_button = tk.Button(root, text="Open Preferences", command=preferences.openPreferencesPopup)
+    sh=gl.prefs.getPreferenceValue(preference_name="shrink")
     if sh:
-        preferences.update_preference_value("defaultTestFileValue",True)
+        preferences.updatePreferenceValue("defaultTestFileValue",True)
     else:
-        preferences.update_preference_value("defaultTestFileValue",False)
+        preferences.updatePreferenceValue("defaultTestFileValue",False)
     open_button.pack(pady=20)
     root.mainloop()
 

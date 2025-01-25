@@ -86,7 +86,6 @@ def anealPrimers(canvas:Canvas ):
                             found=True
                             sequenceRecordPrimer.xStartOffsetAsLetters=largestOverlapsInStrand[0][0]
                             # change feature location
-                            sequenceRecordPrimer.updateFeatureOffset()
                             Model.modelInstance.sequenceRecordList[p].hybridizedToStrand=Model.modelInstance.sequenceRecordList[s]
                             Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]  
                             primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
@@ -102,14 +101,13 @@ def anealPrimers(canvas:Canvas ):
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
                             found=True
                             sequenceRecordPrimer.xStartOffsetAsLetters=largestOverlapsInStrand[0][0]
-                            sequenceRecordPrimer.updateFeatureOffset()
                             Model.modelInstance.sequenceRecordList[p].hybridizedToStrand=Model.modelInstance.sequenceRecordList[s]
                             Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]
                             primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
                             primRec.fiveTo3=True
                             Model.modelInstance.sequenceRecordList.insert(s,primRec)    
     if found:
-        gl.prefs.set_preference_value("shrink", False)
+        # gl.prefs.set_preference_value("shrink", False)
         drawCanvas(canvas)                                            
     else:
         names:str=""

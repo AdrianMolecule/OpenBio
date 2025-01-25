@@ -59,9 +59,9 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, bas
 		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
 			if shrink:
-				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+gl.maskSkipped[loc.start])
+				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters+gl.maskSkipped[loc.start+mySequenceRecord.xStartOffsetAsLetters])
 			else:
-				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * loc.start
+				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters)
 			if feature.qualifiers.get("label"):
 				text=feature.qualifiers.get("label")[0]
 			else:	
@@ -88,7 +88,6 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 		letter: str=dnaSequenceStr[i]		
 		if shrink and mySequenceRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
-				# x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+gl.maskSkipped[loc.start])
 		else:
 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
 		color="white" if not coloredBases else gl.prefs.get_preference_value(letter)
@@ -116,13 +115,19 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.get_preference_value(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
-	x: int=gl.canvasHorizontalMargin		
+	x: int=gl.canvasHorizontalMargin+ (mySequenceRecord.xStartOffsetAsLetters)*baseRectangleSymbolXPixelSize	
 	seq:Seq=mySequenceRecord.seq
 	dnaSequenceStr=seqToString(seq)
 	spamCount=0
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]
+		# if shrink and mySequenceRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
+		# 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
+		# 				# x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+gl.maskSkipped[loc.start])
+		# else:
+		# 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
+						
 		if shrink:
 			excitingLetter: bool= gl.mask[i]
 			if excitingLetter==True:
@@ -218,13 +223,14 @@ def buildMask():# cell is True is visible
 	# skipped:int=0
 	for rec in Model.modelInstance.sequenceRecordList:
 		rec:MySeqRecord
-		if not rec.isPrimer or (rec.isPrimer and rec.hybridizedToStrand):# we use the features on primers only if the primers are positioned on strands
+		if rec.isPrimer:
+			if  rec.hybridizedToStrand:
+				for cell in range(rec.xStartOffsetAsLetters,rec.xStartOffsetAsLetters+len(rec.seq)):
+					gl.mask[cell]=1
+		else:#strand
 			for feature in rec.features:
 				for cell in range(feature.location.start,feature.location.end):
-					# skipped+=1
 					gl.mask[cell]=1
-				# feature.qualifiers.update({"skipped": skipped})
-	skip:int=0
 	updateMaskSkipped()
 
 def updateMaskSkipped():# todo call it only if skipped and the current one is None

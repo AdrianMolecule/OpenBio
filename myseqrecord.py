@@ -32,13 +32,6 @@ class MySeqRecord(SeqRecord):
         # Customize the representation of the item
         return "id"+str(self.id)+" description:"+self.description+" SingleStranded:"+str(self.singleStranded)+" primer:"+str(self.isPrimer)+" 5To3:"+str(self.fiveTo3) +" primer:"+str(self.isPrimer)+" Sequence:"+str( self.seq)[:70]
 
-    # def isHybridizedToPrimer (self):
-    #      return  self.hybridizedTo and  self.hybridizedTo.primer
-    
-    def updateFeatureOffset (self):
-         if self.isPrimer:
-              self.features[0].location = FeatureLocation(self.xStartOffsetAsLetters, self.xStartOffsetAsLetters+len(self.seq))
-
     def displayInfo(self):
         print(f"ID: {self.id}")
         print(f"Description: {self.description}")

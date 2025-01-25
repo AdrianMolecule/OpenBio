@@ -8,7 +8,7 @@ from Bio.Seq import MutableSeq
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 class MySeqRecord(SeqRecord):
-    classId=0
+    uniqueId=0
     def __init__(self, seqRecord,singleStranded:bool,fiveTo3:bool,primer:bool):
         # Call the parent class constructor with the attributes of seqRecord
         super().__init__(seqRecord.seq, id=seqRecord.id, name=seqRecord.name, description=seqRecord.description,  annotations=seqRecord.annotations, features=seqRecord.features, dbxrefs=seqRecord.dbxrefs)
@@ -21,8 +21,8 @@ class MySeqRecord(SeqRecord):
         self.xStartOffsetAsLetters=0 # in letters not pixels       
         self.hybridizedToStrand:MySeqRecord=None
         self.hybridizedToPrimer:MySeqRecord=None
-        self.uniqueId=MySeqRecord.classId
-        MySeqRecord.classId+=1
+        self.uniqueId=MySeqRecord.uniqueId
+        MySeqRecord.uniqueId+=1
 
     def __str__(self):
             # Customize how the item is printed

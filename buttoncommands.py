@@ -128,11 +128,31 @@ def toggleShrink( canvas:Canvas):
               
 
 def elongate( canvas:Canvas):
-    p=gl.prefs.getPreferenceValue(preference_name="shrink")
-    if p:
-          gl.prefs.setPreferenceValue("shrink", False)
-    else:
-          gl.prefs.setPreferenceValue("shrink", True)
+    found:bool=False
+    for i, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
+        sequenceRecordPrimer:MySeqRecord
+        if sequenceRecordPrimer.isPrimer and sequenceRecordPrimer.hybridizedToStrand:    
+            if sequenceRecordPrimer.fiveTo3:     
+                subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[sequenceRecordPrimer.xStartOffsetAsLetters:].complement()
+            else:
+                subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
+            seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
+                                 description=f"from elongated primer {sequenceRecordPrimer.description}")
+            newRec = MySeqRecord(seqRec, singleStranded=False,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
+            if sequenceRecordPrimer.fiveTo3:     
+                newRec.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
+            else:
+                newRec.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters     
+            newRec.hybridizedToPrimer=False
+            newRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand
+            newRec.uniqueId=sequenceRecordPrimer.uniqueId    
+            oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": ["elongated primer"]})
+            # newRec.features.insert(0,oldPrimerFeature)
+            Model.modelInstance.sequenceRecordList.pop(i)
+            Model.modelInstance.sequenceRecordList.insert(i, newRec)
+            found=True
+    if not found:
+        messagebox.showerror("Not found", "No primer ready to elongate") 
     drawCanvas(canvas)           
               
 def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:

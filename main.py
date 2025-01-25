@@ -1,5 +1,6 @@
 import tkinter as tk
 from util import *
+from gl import *
 from buttoncommands import *
 from preferences import Preferences
 
@@ -63,10 +64,6 @@ class UiApp:
         # Create zoom out button
         buttonZo = tk.Button(self.bottomButtonBar, text="Zoom Out", command=lambda: self.canvasZoom(False))
         buttonZo.grid(row=0, column=column, padx=3)
-        column+=1        
-        #refresh
-        buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=self.refresh)
-        buttonRefresh.grid(row=0, column=column, padx=20)   
         # print
         column+=1           
         buttonPrint = tk.Button(self.bottomButtonBar, text="Print", command=lambda: self.printCanvas(self.canvas))
@@ -75,6 +72,21 @@ class UiApp:
         #shrink
         buttonShrink = tk.Button(self.bottomButtonBar, text="Toggle Shrink", command=lambda:toggleShrink(self.canvas))
         buttonShrink.grid(row=0, column=column, padx=3)   
+        #refresh
+        column+=1        
+        buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=self.refresh)
+        buttonRefresh.grid(row=0, column=column, padx=3)   
+        #debug
+        column+=1 
+        def toggleDebug():
+            gl.debug = not gl.debug  
+            self.refresh()  
+        buttonDebug = tk.Button(self.bottomButtonBar, text="Toggle Debug", command=toggleDebug)
+        buttonDebug.grid(row=0, column=column, padx=20)   
+        #XXX
+        column+=1        
+        buttonXXX = tk.Button(self.bottomButtonBar, text="XX", command=None)
+        buttonXXX.grid(row=0, column=column, padx=20)   
          #
         # Create Steps button bar
         def incrementRowOrCol(row,col,vertical):

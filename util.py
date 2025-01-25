@@ -62,8 +62,8 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, bas
 				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters+gl.maskSkipped[loc.start+mySequenceRecord.xStartOffsetAsLetters])
 			else:
 				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters)
-			if feature.qualifiers.get("label"):
-				text=feature.qualifiers.get("label")[0]
+			if getLabel(feature):
+				text=getLabel(feature)[0]
 			else:	
 				text=feature.type
 			drawTextInRectangle(text, canvas, 	x, yStart, 
@@ -372,6 +372,8 @@ def printRed(message:str):
 # 		successFlag=False
 # 	return successFlag
 
+def getLabel (feature:SeqFeature):
+	return feature.qualifiers.get("label")
 
 
 def drawMask(canvas:Canvas,xStart, yStart)->int:

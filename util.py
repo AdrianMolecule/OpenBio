@@ -278,10 +278,14 @@ def printCanvas(canvas):
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
 def loadFile(default=False)->tuple[list[MySeqRecord],str]:	
+	currentDir=str(Path(__file__).resolve().parent)
 	if default:
-		filePath=str(Path(__file__).resolve().parent)+gl.prefs.get_preference_value("defaultTestFileValue")
+		filePath=currentDir+"/samples/"+gl.prefs.get_preference_value("defaultTestFileValue")
 	else:
-		filePath = filedialog.askopenfilename(title="Open EMBL File", filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])    
+		if not gl.debug:
+			filePath = filedialog.askopenfilename(title="Open EMBL File",filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])  
+		else:
+			filePath = filedialog.askopenfilename(title="Open EMBL File",  initialdir=currentDir+"/samples/",filetypes=[("EMBL Files", "*.embl"),("All Files", "*.*")])    
 	secRecList:list[MySeqRecord]		=None
 	if filePath:
 		try:
@@ -379,7 +383,7 @@ def drawMask(canvas:Canvas,xStart, yStart)->int:
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
 
-	y=yStart	
+	y=yStart	+2*baseRectangleSymbolYPixelSize
 	x=xStart
 	for i, bit in enumerate(gl.mask):
 		canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , 

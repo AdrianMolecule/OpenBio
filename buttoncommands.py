@@ -75,7 +75,9 @@ def anealPrimers(canvas:Canvas ):
             complementedReversedPrimerSeq:Seq=sequenceRecordPrimer.seq.reverse_complement()
             for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList):
                 strandRegularRecord: MySeqRecord
-                if not strandRegularRecord.isPrimer and (not strandRegularRecord.hybridizedToPrimer or(strandRegularRecord.hybridizedToPrimer and sequenceRecordPrimer.uniqueId!=strandRegularRecord.hybridizedToPrimer.uniqueId)): #and not strandRegularRecord.hybridizedToPrimer: # adrian avoid adding the same primer twice on same strand
+                # check is not blocked by another strand or the same primer
+                if not strandRegularRecord.hybridizedToStrand and not strandRegularRecord.isPrimer and (not strandRegularRecord.hybridizedToPrimer or
+                    (strandRegularRecord.hybridizedToPrimer and sequenceRecordPrimer.uniqueId!=strandRegularRecord.hybridizedToPrimer.uniqueId)): #and not strandRegularRecord.hybridizedToPrimer: # adrian avoid adding the same primer twice on same strand
                     if strandRegularRecord.fiveTo3: # <----
                         # print("Testing 5to3",strandRegularRecord.seq) 
                         overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedReversedPrimerSeq, minOverlapLength=minOverlapLength)

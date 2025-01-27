@@ -194,7 +194,7 @@ class Preferences:
                 raise ValueError("Invalid boolean value")
         # 
         p:dict[str,Preference] = {
-            "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/test.embl", str,"Path to the default file"),
+            "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/porkcomplete.embl", str,"Path to the default file"),
             "canvasHorizontalMargin":   Preference("canvasHorizontalMargin", int,  0, int,"Horizontal margin for the canvas"),
             "fontName":                 Preference("fontName", str, "Arial",  str,"Font type for the canvas"),
             "fontSize":                 Preference("fontSize", int, 10, int,"Font type for the canvas"),

@@ -86,7 +86,7 @@ def anealPrimers(canvas:Canvas ):
                             return
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
                             found=True
-                            sequenceRecordPrimer.xStartOffsetAsLetters=largestOverlapsInStrand[0][0]
+                            sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
                             # change feature location
                             Model.modelInstance.sequenceRecordList[p].hybridizedToStrand=Model.modelInstance.sequenceRecordList[s]
                             Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]  
@@ -102,7 +102,7 @@ def anealPrimers(canvas:Canvas ):
                             return
                         if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
                             found=True
-                            sequenceRecordPrimer.xStartOffsetAsLetters=largestOverlapsInStrand[0][0]
+                            sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
                             Model.modelInstance.sequenceRecordList[p].hybridizedToStrand=Model.modelInstance.sequenceRecordList[s]
                             Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]
                             primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
@@ -139,17 +139,20 @@ def elongate( canvas:Canvas):
             else:
                 subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
             seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
-                                 description=f"from elongated primer {sequenceRecordPrimer.description}")
+                                 description=f" {sequenceRecordPrimer.description}")
             newRec = MySeqRecord(seqRec, singleStranded=False,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
+            
+            featureLabel=f"seed primer "+sequenceRecordPrimer.description
             if sequenceRecordPrimer.fiveTo3:     
                 newRec.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
+                oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
             else:
+                oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters, sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
                 newRec.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters     
             newRec.hybridizedToPrimer=False
             newRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand
             newRec.uniqueId=sequenceRecordPrimer.uniqueId    
-            oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": ["elongated primer"]})
-            # newRec.features.insert(0,oldPrimerFeature)
+            newRec.features.insert(0,oldPrimerFeature)
             Model.modelInstance.sequenceRecordList.pop(i)
             Model.modelInstance.sequenceRecordList.insert(i, newRec)
             found=True

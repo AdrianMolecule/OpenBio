@@ -54,7 +54,7 @@ def drawCanvas(canvas:Canvas )->int:
 	return 2*gl.canvasHorizontalMargin+sequenceWidth
 
 #draw features from original or cached features
-def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool):
+def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool,bgColor):
 	for feature in mySequenceRecord.features:
 		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
@@ -68,7 +68,7 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, bas
 				text=feature.type
 			drawTextInRectangle(text, canvas, 	x, yStart, 
 					   baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, 
-					'white', loc.end - loc.start, font)
+					bgColor, loc.end - loc.start, font)
 
 def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:
 	# xStart:int,gl.canvasHorizontalMargin
@@ -94,7 +94,7 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 		drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 		color=color, font=font, upsideDownLetter=upsideDownLetter)
 		# x += baseRectangleSymbolXPixelSize # Move to the next position
-	drawFeatures(canvas, mySequenceRecordPrimer, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	drawFeatures(canvas, mySequenceRecordPrimer, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink,'pink')
 	if shrink:
 		maxX=gl.canvasHorizontalMargin + (len(dnaSequenceStr)-(gl.maskSkipped[i+mySequenceRecordPrimer.xStartOffsetAsLetters])*baseRectangleSymbolXPixelSize)
 	else:	
@@ -115,20 +115,14 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
-	x: int=gl.canvasHorizontalMargin+ (mySequenceRecord.xStartOffsetAsLetters)*baseRectangleSymbolXPixelSize	
 	seq:Seq=mySequenceRecord.seq
 	dnaSequenceStr=seqToString(seq)
 	spamCount=0
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and rotated
 	for i in range(len(dnaSequenceStr)):
-		letter: str=dnaSequenceStr[i]
-		# if shrink and mySequenceRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
-		# 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
-		# 				# x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+gl.maskSkipped[loc.start])
-		# else:
-		# 			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
-						
+		letter: str=dnaSequenceStr[i]			
 		if shrink:
+			xLett=gl.canvasHorizontalMargin + (mySequenceRecord.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecord.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize	
 			excitingLetter: bool= gl.mask[i]
 			if excitingLetter==True:
 				spamCount=0
@@ -137,24 +131,23 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 				color="grey"
 				spamCount+=1
 			if spamCount<=3:# keep 3 letters
-				drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+				drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 				color=color, font=font, upsideDownLetter=upsideDownLetter)
-				x += baseRectangleSymbolXPixelSize # Move to the next position	
 		else: # NO SHRINK
+			xLett=gl.canvasHorizontalMargin + (mySequenceRecord.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize	
 			if not coloredBases:
 				color="white"
 			else:
 				color =gl.prefs.getPreferenceValue(letter)
-			drawBase(letter, canvas, x, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
+			drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 			color=color, font=font, upsideDownLetter=upsideDownLetter)
-			x += baseRectangleSymbolXPixelSize # Move to the next position
 
 	# Replace the placeholder with the call to the new method
-	drawFeatures(canvas, mySequenceRecord, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink)
+	drawFeatures(canvas, mySequenceRecord, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink, "white")
 	
 	# Create labels using the createLabel method
 	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:2], 0, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
-	return  x,bandYEnd
+	return  xLett+baseRectangleSymbolXPixelSize,bandYEnd
 
 #calculate the yop relative Ys for features and primers and the final y
 def calculateYs(mySequenceRecord, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
@@ -217,7 +210,8 @@ def drawBaseWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPix
 
 def buildMask():# cell is True is visible
 	# for rec in Model.modelInstance.sequenceRecordList:
-	size: int= max((len((rec.seq)) for rec in  Model.modelInstance.sequenceRecordList), default=0)
+	size: int= max(((len(rec.seq)+rec.xStartOffsetAsLetters) for rec in  Model.modelInstance.sequenceRecordList), default=0)
+	
 	gl.mask=[0] * size
 	gl.maskSkipped=[0] * size
 	# skipped:int=0

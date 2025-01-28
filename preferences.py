@@ -210,7 +210,8 @@ class Preferences:
             "C":                        Preference( "C", str, "red",  str,"Color for Cytosine (C)"),
             "verticalSteps":            Preference( "verticalSteps", bool, False,  convertToBool,"Steps buttons are vertical or horizontal"),
             "minPrimerOverlapLength":            Preference( "minPrimerOverlapLength", int, 18,  int,"minimal length for a primer"),
-            "maxPrimerLength":            Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer")
+            "maxPrimerLength":            Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer"),
+            "hydrogen":             Preference("hydrogen", bool, True, convertToBool, "adds hydrogen links"),
         }
         # print("name:",p.get("fontName").name," end value")
         return p

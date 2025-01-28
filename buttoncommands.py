@@ -165,7 +165,7 @@ def elongate( canvas:Canvas):
         messagebox.showerror("Not found", "No primer ready to elongate") 
     drawCanvas(canvas)           
               
-def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
+def clickOnSeqRecordToDelete( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
     # Get the coordinates of the click
     x, y = event.x, event.y
     button:EnhancedButton=event.widget
@@ -189,4 +189,29 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
             # print(f"the clicked sequence is found{r.uniqueId}")
             drawCanvas(canvas)
             break
+
+# def clickOnSeqRecordToDisplayInfo( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
+#     # Get the coordinates of the click
+#     x, y = event.x, event.y
+#     button:EnhancedButton=event.widget
+#     # Find the bounding box of the text
+#     bbox = canvas.bbox("current")
+#     item = canvas.find_closest(x, y)  # Find the closest item to the mouse click
+#     if item and canvas.type(item)=="text" : # Get the type of the item    
+#         text = canvas.itemcget("current", "text")
+#         # If the click is within the bounding box, calculate the letter clicked
+#         if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+#             # Find the character index in the text that was clicked
+#             char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
+#             clicked_char = text[char_index]
+#             print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
+#     else:
+#             print(f"Action 1 was not over a character")
+#     for i,r in enumerate(Model.modelInstance.sequenceRecordList):
+#         r:MySeqRecord
+#         if r.uniqueId ==mySeqRecord.uniqueId:
+#             Model.modelInstance.sequenceRecordList.pop(i)
+#             # print(f"the clicked sequence is found{r.uniqueId}")
+#             drawCanvas(canvas)
+#             break
 

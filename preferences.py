@@ -212,6 +212,7 @@ class Preferences:
             "minPrimerOverlapLength":            Preference( "minPrimerOverlapLength", int, 18,  int,"minimal length for a primer"),
             "maxPrimerLength":            Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer"),
             "hydrogen":             Preference("hydrogen", bool, True, convertToBool, "adds hydrogen links"),
+            "ruler":             Preference("ruler", bool, True, convertToBool, " draws coordinates for elements"),
         }
         # print("name:",p.get("fontName").name," end value")
         return p

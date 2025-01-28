@@ -92,7 +92,7 @@ def anealPrimers(canvas:Canvas ):
                             Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]  
                             primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
                             primRec.fiveTo3=False
-                            primRec.seq=Seq(seqToString(primRec.seq)[::-1])
+                            primRec.seq=Seq(seqToString(primRec.seq)[::-1])# reverses the string
                             Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
                     else:  
                         # print("Testing 3to5",strandRegularRecord.seq)                 
@@ -189,6 +189,30 @@ def clickOnSeqRecordToDelete( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqR
             # print(f"the clicked sequence is found{r.uniqueId}")
             drawCanvas(canvas)
             break
+def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
+    # Get the coordinates of the click
+    x, y = event.x, event.y
+    button:EnhancedButton=event.widget
+    # Find the bounding box of the text
+    bbox = canvas.bbox("current")
+    item = canvas.find_closest(x, y)  # Find the closest item to the mouse click
+    if item and canvas.type(item)=="text" : # Get the type of the item    
+        text = canvas.itemcget("current", "text")
+        # If the click is within the bounding box, calculate the letter clicked
+        if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+            # Find the character index in the text that was clicked
+            char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
+            clicked_char = text[char_index]
+            print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
+    else:
+            print(f"Action 1 was not over a character")
+    # for i,r in enumerate(Model.modelInstance.sequenceRecordList):
+    #     r:MySeqRecord
+    #     if r.uniqueId ==mySeqRecord.uniqueId:
+    #         Model.modelInstance.sequenceRecordList.pop(i)
+    #         # print(f"the clicked sequence is found{r.uniqueId}")
+    #         drawCanvas(canvas)
+    #         break
 
 # def clickOnSeqRecordToDisplayInfo( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
 #     # Get the coordinates of the click

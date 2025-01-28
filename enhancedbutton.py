@@ -13,6 +13,9 @@ class EnhancedButton:
         self.y = y
         self.labelWidthPx = gl.canvasHorizontalMargin    
         self.mySeqRecord=mySeqRecord    
+        # Create the label
+        labelDescription = canvas.create_rectangle(x , y,   x + self.labelWidthPx , y + labelHeightPx-8,  fill="lightblue", outline="black", width=1)
+        # Create text inside the rectangle to represent the label's text
         from buttoncommands import clickOnSeqRecordToDelete
         labelDelete = canvas.create_rectangle(x , y+labelHeightPx-8,   x + self.labelWidthPx , y+labelHeightPx,  fill="red", outline="black", width=1)
         canvas.tag_bind(labelDelete, "<Button-1>", lambda event: clickOnSeqRecordToDelete(event, canvas, self.mySeqRecord))

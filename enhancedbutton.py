@@ -5,7 +5,7 @@ import gl
 
 
 class EnhancedButton:
-    def __init__(self, canvas, text, x, y, mySeqRecord:MySeqRecord, labelHeightPx):
+    def __init__(self, canvas:Canvas, text, x, y, mySeqRecord:MySeqRecord, labelHeightPx):
         # Initialize button properties
         self.canvas = canvas
         self.text = text
@@ -16,10 +16,35 @@ class EnhancedButton:
         # Create the label
         label = canvas.create_rectangle(x , y,   x + self.labelWidthPx , y + labelHeightPx,  fill="lightblue", outline="black", width=1)
         # Create text inside the rectangle to represent the label's text
-        text=canvas.create_text(x+self.labelWidthPx//2, y+labelHeightPx//2, text=text, font=("Arial", 12), angle=90, fill="black")
+        text_id=canvas.create_text(x+self.labelWidthPx//2, y+labelHeightPx//2, text=text, font=("Arial", 12), angle=90, fill="black")
         from buttoncommands import clickOnSeqRecord
         canvas.tag_bind(label, "<Button-1>", lambda event: clickOnSeqRecord(event, canvas, self.mySeqRecord))
         canvas.tag_bind(text, "<Button-1>",  lambda event: clickOnSeqRecord(event, canvas, self.mySeqRecord))
+        popupWindow = None
+        def on_hover(event):
+            global popupWindow
+            textId = event.widget.find_withtag("current")[0]
+            canvas.itemconfig(text_id, fill="red")  # Change the text color to red
+            current_text = event.widget.itemcget(textId, "text")
+            new_text = current_text + "xx" 
+            popupWindow = tk.Toplevel()
+            popupWindow.title("Temporary Popup")            
+            # Display the text in the popup window
+            label = tk.Label(popupWindow, text=self.mySeqRecord.description, font=("Helvetica", 14))
+            label.pack(padx=20, pady=20)   
+            popupWindow.after(1000, popupWindow.destroy)  # Close the popup after 1 second
+            return popupWindow  # Return the reference to the popup window                        
+
+        # Function to reset the text color when mouse leaves
+        def on_leave(event):
+            text_id = event.widget.find_withtag("current")[0]
+            canvas.itemconfig(text_id, fill="black")  # Change the text color to red   
+            if popupWindow is not None and popupWindow.winfo_exists():
+                print("destroy pop")
+                popupWindow.destroy()  # Close the pop-up         
+                            
+        canvas.tag_bind(text_id, "<Enter>", lambda event, text_id=text_id: on_hover(event))  # Mouse enters
+        canvas.tag_bind(text_id, "<Leave>", lambda event, text_id=text_id: on_leave(event))  # Mouse leaves
 
 
 def main():

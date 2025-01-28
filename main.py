@@ -25,6 +25,7 @@ class UiApp:
         canvasFrame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         # Create a canvas
         self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=gl.canvasHeight)
+        
         # Create a horizontal scrollbar
         self.hScrollbar = tk.Scrollbar(canvasFrame, orient="horizontal", command=self.canvas.xview)
         self.canvas.config(xscrollcommand=self.hScrollbar.set)

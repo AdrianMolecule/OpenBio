@@ -135,7 +135,8 @@ def elongate( canvas:Canvas):
         sequenceRecordPrimer:MySeqRecord
         if sequenceRecordPrimer.isPrimer and sequenceRecordPrimer.hybridizedToStrand:    
             if sequenceRecordPrimer.fiveTo3:     
-                subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[sequenceRecordPrimer.xStartOffsetAsLetters:].complement()
+                subsequence: Seq = Seq(sequenceRecordPrimer.seq+
+                    sequenceRecordPrimer.hybridizedToStrand.seq[len(sequenceRecordPrimer):].complement())
             else:
                 subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
             seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",

@@ -135,10 +135,14 @@ def elongate( canvas:Canvas):
         sequenceRecordPrimer:MySeqRecord
         if sequenceRecordPrimer.isPrimer and sequenceRecordPrimer.hybridizedToStrand:    
             if sequenceRecordPrimer.fiveTo3:     
-                subsequence: Seq = Seq(sequenceRecordPrimer.seq+
-                    sequenceRecordPrimer.hybridizedToStrand.seq[len(sequenceRecordPrimer):].complement())
+                subsequence: Seq = Seq(sequenceRecordPrimer.seq+ sequenceRecordPrimer.hybridizedToStrand.seq[len(sequenceRecordPrimer)
+                                                                                                             -sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters:].complement())
             else:
-                subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
+                #subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
+                subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
+                                                                                   sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+
+                sequenceRecordPrimer.seq)
+                
             seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
                                  description=f" {sequenceRecordPrimer.description}")
             newRec = MySeqRecord(seqRec, singleStranded=False,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)

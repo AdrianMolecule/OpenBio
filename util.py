@@ -21,10 +21,6 @@ from enhancedbutton import EnhancedButton
 from primers import PrimerUtils
 from preferences import Preferences
 
-
-#######
-horizontalPixelsMargin=2 # head room between the base letter and it's holding box
-
 def drawCanvas( )->int:
 	yPos:int = 0  # y is 0 at top and increases downwards	
 	# Clear any previous drawings
@@ -71,7 +67,7 @@ def drawPrimer(mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:
 	verticalSequenceSpacing:int=gl.verticalSequenceSpacing+5 # blank space between 2 sequences Adrian
 	upsideDownLetter:bool=not mySequenceRecordPrimer.fiveTo3 and gl.rotated
 	dnaSequenceStr=seqToString(mySequenceRecordPrimer.seq)	
-	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecordPrimer,  yStart, gl.baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecordPrimer,  yStart)		
 	i=0
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]		
@@ -95,8 +91,7 @@ def drawPrimer(mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:
 def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 	font:tuple[str,int]=(gl.fontName,gl.fontSize)
 	# gl.prefs.dump()
-	verticalSequenceSpacing:int=gl.verticalSequenceSpacing+5 # blank space between 2 sequences Adrian
-	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart, gl.baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart)
 	seq:Seq=mySequenceRecord.seq
 	dnaSequenceStr=seqToString(seq)
 	spamCount=0
@@ -133,23 +128,23 @@ def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 	return  xLett+gl.baseRectangleSymbolXPixelSize,bandYEnd
 
 #calculate the yop relative Ys for features and primers and the final y
-def calculateYs(mySequenceRecord, yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing):
+def calculateYs(mySequenceRecord, yStart): # adrian for some reason somebody added 5 to verticalSequenceSpacing
 	if mySequenceRecord.fiveTo3:
-		featureYStart=yStart+verticalSequenceSpacing
-		sequenceYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize
+		featureYStart=yStart+gl.verticalSequenceSpacing
+		sequenceYStart=yStart+gl.verticalSequenceSpacing+gl.baseRectangleSymbolYPixelSize
 		if mySequenceRecord.hybridizedToStrand or mySequenceRecord.hybridizedToPrimer:
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize# TODO adrian +3 if gl.hydrogen else 0
+			bandEnd=yStart+gl.verticalSequenceSpacing+2*gl.baseRectangleSymbolYPixelSize
 		else:
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+			bandEnd=yStart+gl.verticalSequenceSpacing+2*gl.baseRectangleSymbolYPixelSize+gl.verticalSequenceSpacing
 	else: #  3 to 5
 		if mySequenceRecord.hybridizedToStrand or mySequenceRecord.hybridizedToPrimer:
 			sequenceYStart=yStart
-			featureYStart=yStart+baseRectangleSymbolYPixelSize
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize
+			featureYStart=yStart+gl.baseRectangleSymbolYPixelSize
+			bandEnd=yStart+gl.verticalSequenceSpacing+2*gl.baseRectangleSymbolYPixelSize
 		else:
-			sequenceYStart=yStart+verticalSequenceSpacing
-			featureYStart=yStart+verticalSequenceSpacing+baseRectangleSymbolYPixelSize			
-			bandEnd=yStart+verticalSequenceSpacing+2*baseRectangleSymbolYPixelSize+verticalSequenceSpacing
+			sequenceYStart=yStart+gl.verticalSequenceSpacing
+			featureYStart=yStart+gl.verticalSequenceSpacing+gl.baseRectangleSymbolYPixelSize			
+			bandEnd=yStart+gl.verticalSequenceSpacing+2*gl.baseRectangleSymbolYPixelSize+gl.verticalSequenceSpacing
 	return featureYStart,sequenceYStart,bandEnd
 
 def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, charsLength,font,rotated=None):
@@ -364,13 +359,10 @@ def getLabel (feature:SeqFeature):
 
 
 def drawMask( yStart)->int:
-	fontSize:int=gl.prefs.getPreferenceValue(preference_name="fontSize")
-	ruler:bool=gl.prefs.getPreferenceValue(preference_name="ruler")
-	fontName=gl.prefs.getPreferenceValue(preference_name="fontName")
-	font:tuple[str,int]=(fontName,6)
+	font:tuple[str,int]=(gl.fontName,6)
 	x=gl.canvasLeftPadding
 	y=yStart	+gl.baseRectangleSymbolYPixelSize
-	if ruler:
+	if gl.ruler:
 		maxLen=0
 		for i, sequenceRecord in enumerate(Model.modelInstance.sequenceRecordList):
 				sequenceRecord:MySeqRecord

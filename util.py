@@ -234,7 +234,7 @@ def buildMask():# cell is True is visible
 					gl.mask[cell]=1
 		else:#strand
 			for feature in rec.features:
-				for cell in range(feature.location.start,feature.location.end):
+				for cell in range(feature.location.start+rec.xStartOffsetAsLetters,feature.location.end+rec.xStartOffsetAsLetters):
 					gl.mask[cell]=1
 	updateMaskSkipped()
 
@@ -303,6 +303,9 @@ def loadFile(default=False)->tuple[list[MySeqRecord],str]:
 
 def loadModel(default:False, append=False):	
 	seqRecList, filePath= loadFile(default )
+	if len(seqRecList)==0:
+		messagebox.showerror("No Sequences", f" Please select a file that has at least one sequence") 
+		return None	
 	if append and Model.modelInstance!=None:
 		for newRecord in seqRecList:
 			Model.modelInstance.sequenceRecordList.append(newRecord)

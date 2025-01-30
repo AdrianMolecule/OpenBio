@@ -1,24 +1,19 @@
 import tkinter as tk
-from tkinter import Canvas, Button
 from myseqrecord import MySeqRecord
 import gl
-
-
 
 class EnhancedButton:
     def __init__(self, text, x, y, mySeqRecord:MySeqRecord, labelHeightPx):
         # Initialize button properties
-        self.text = text
-        self.x = x
-        self.y = y
-        self.labelWidthPx = gl.leftButtonsWidth    
+        y+=2 # to deal with some alignments between the 2 canvases
+        self.text = text 
         self.mySeqRecord=mySeqRecord    
         self.popupWindow = None
         # Create the label
-        labelDescription = gl.canvasLeft.create_rectangle(x , y,   x + self.labelWidthPx , y + labelHeightPx-8,  fill="lightblue", outline="black", width=1)
+        labelDescription = gl.canvasLeft.create_rectangle(x , y,   x + gl.leftButtonsWidth , y + labelHeightPx-8,  fill="lightblue", outline="black", width=1)
         # Create text inside the rectangle to represent the label's text
-        from buttoncommands import clickOnSeqRecordToDelete
-        labelDelete = gl.canvasLeft.create_rectangle(x , y+labelHeightPx-8,   x + self.labelWidthPx , y+labelHeightPx,  fill="red", outline="black", width=1)
+        labelDelete = gl.canvasLeft.create_rectangle(x , y+labelHeightPx-7,   x + gl.leftButtonsWidth , y+labelHeightPx,  fill="red", outline="black", width=1)
+        from util import clickOnSeqRecordToDelete
         gl.canvasLeft.tag_bind(labelDelete, "<Button-1>", lambda event: clickOnSeqRecordToDelete(event,  self.mySeqRecord))
         def on_hover(event):
             global popupWindow
@@ -44,7 +39,7 @@ class EnhancedButton:
             if popupWindow is not None and popupWindow.winfo_exists():
                 popupWindow.destroy()  # Close the pop-up         
                             
-        textDescription_id=gl.canvasLeft.create_text(x+self.labelWidthPx//2, y+labelHeightPx//2, text=text, font=("Arial", 8), angle=90, fill="black")
+        textDescription_id=gl.canvasLeft.create_text(x+gl.leftButtonsWidth//2, y+labelHeightPx//2, text=text, font=("Arial", 8), angle=90, fill="black")
         gl.canvasLeft.tag_bind(textDescription_id, "<Enter>", lambda event, text_id=textDescription_id: on_hover(event))  # Mouse enters
         gl.canvasLeft.tag_bind(textDescription_id, "<Leave>", lambda event, text_id=textDescription_id: on_leave(event))  # Mouse leaves
 

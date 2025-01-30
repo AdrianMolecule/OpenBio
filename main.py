@@ -1,7 +1,6 @@
 import tkinter as tk
 from util import *
 from gl import *
-from buttoncommands import *
 from preferences import Preferences
 
 class UiApp:
@@ -13,7 +12,7 @@ class UiApp:
         screen_width = root.winfo_screenwidth()-20
         screen_height = int(root.winfo_screenheight()/2)
         self.root.geometry(f"{screen_width}x{screen_height}+0+0")
-        gl.prefs=Preferences(self.root, self.refresh)
+        gl.prefs=Preferences(self.root, refresh)
         self.createLeftCanvasForEnhancedBottons()
         self.createCanvasWithScrollbar()  
         # self.root.grid_columnconfigure(0, weight=0)    
@@ -24,7 +23,7 @@ class UiApp:
         # Configure grid to allow resizing  
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
-
+    
     def createLeftCanvasForEnhancedBottons(self):
         self.canvasLeft = tk.Canvas(root, width=gl.prefs.getPreferenceValue("leftButtonsWidth"), height=gl.canvasHeight, bg='lightblue')   
         self.canvasLeft.grid(row=0, column=0, padx=0, pady=0, sticky="nw")
@@ -32,10 +31,10 @@ class UiApp:
 
     def createCanvasWithScrollbar(self):
         # Create a frame to hold the canvas and the scrollbar
-        canvasFrame = tk.Frame(self.root)
-        canvasFrame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
+        canvasFrame = tk.Frame(self.root,bd=0, padx=0, pady=0)
+        canvasFrame.grid(row=0, column=1, padx=0, pady=0, sticky="nsew")
         # Create a canvas
-        self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=gl.canvasHeight)
+        self.canvas = tk.Canvas(canvasFrame, bg="lightgray", height=gl.canvasHeight, bd=0)
         
         # Create a horizontal scrollbar
         self.hScrollbar = tk.Scrollbar(canvasFrame, orient="horizontal", command=self.canvas.xview)
@@ -86,13 +85,13 @@ class UiApp:
         buttonShrink.grid(row=0, column=column, padx=3)   
         #refresh
         column+=1        
-        buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=self.refresh)
+        buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=refresh)
         buttonRefresh.grid(row=0, column=column, padx=3)   
         #debug
         column+=1 
         def toggleDebug():
             gl.debug = not gl.debug  
-            self.refresh()  
+            refresh()   
         buttonDebug = tk.Button(self.bottomButtonBar, text="Toggle Debug", command=toggleDebug)
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
@@ -142,15 +141,12 @@ class UiApp:
     def loadSequencesHandler(self)->Seq:
         loadModel(False, append=False)
         self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        drawCanvas(self.canvas) 
+        refresh()  
 
     def addSequencesHandler(self)->Seq:
         loadModel(False, append=True)
         self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        drawCanvas(self.canvas) 
-
-    def refresh(self):
-        drawCanvas(self.canvas) 
+        refresh()  
 
     def canvasDrawCircle(self):
         self.canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -161,10 +157,10 @@ class UiApp:
         if zoomin!=True and oldSize>3: # ZOOM OUT no to negative font sizes
                 gl.prefs.getPreferenceValue(name)
                 gl.prefs.setPreferenceValue(name, oldSize-1)
-                drawCanvas(self.canvas)
+                refresh() 
         else:   
             gl.prefs.setPreferenceValue(name,oldSize+1 )           
-            drawCanvas(self.canvas)
+            refresh() 
 
 
 if __name__ == "__main__":
@@ -172,5 +168,5 @@ if __name__ == "__main__":
     app = UiApp(root)
     loadModel(default=True)
     app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-    drawCanvas(app.canvas)
+    drawCanvas()
     root.mainloop()

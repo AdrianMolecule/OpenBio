@@ -76,7 +76,6 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	hydrogen=gl.prefs.getPreferenceValue("hydrogen")		
 	upsideDownLetter:bool=not mySequenceRecordPrimer.fiveTo3 and rotated
 	dnaSequenceStr=seqToString(mySequenceRecordPrimer.seq)	
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecordPrimer,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)		
@@ -89,7 +88,7 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 			xLett=gl.canvasLeftPadding + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
 		color="white" if not coloredBases else gl.prefs.getPreferenceValue(letter)
 		drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
-		color=color, font=font, upsideDownLetter=upsideDownLetter,fiveTo3=mySequenceRecordPrimer.fiveTo3,hydrogen=hydrogen)
+		color=color, font=font, upsideDownLetter=upsideDownLetter,fiveTo3=mySequenceRecordPrimer.fiveTo3)
 		# x += baseRectangleSymbolXPixelSize # Move to the next position
 	drawFeatures(canvas, mySequenceRecordPrimer, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink,'pink')
 	if shrink:
@@ -112,7 +111,6 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels	
 	verticalSequenceSpacing:int=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")+5 # blank space between 2 sequences
-	hydrogen=gl.prefs.getPreferenceValue("hydrogen")	
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart, baseRectangleSymbolYPixelSize, verticalSequenceSpacing)
 	seq:Seq=mySequenceRecord.seq
 	dnaSequenceStr=seqToString(seq)
@@ -131,7 +129,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 				spamCount+=1
 			if spamCount<=3:# keep 3 letters
 				drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
-				color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3, hydrogen=hydrogen)
+				color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
 		else: # NO SHRINK
 			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize	
 			if not coloredBases:
@@ -139,7 +137,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 			else:
 				color =gl.prefs.getPreferenceValue(letter)
 			drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
-			color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3,hydrogen=hydrogen)
+			color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
 
 	# Replace the placeholder with the call to the new method
 	drawFeatures(canvas, mySequenceRecord, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink, "white")
@@ -147,9 +145,8 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 	# Create labels using the createLabel method
 	eb:EnhancedButton=EnhancedButton( mySequenceRecord.description[:8], 0, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
 	if mySequenceRecord.fiveTo3:
-		if  hydrogen : 
-			bandYEnd+=4# add a gap to draw the hydrogen bond lines
-			
+		if  gl.hydrogen : 
+			bandYEnd+=4# add a gap to draw the hydrogen bond lines	
 	return  xLett+baseRectangleSymbolXPixelSize,bandYEnd
 
 #calculate the yop relative Ys for features and primers and the final y
@@ -185,22 +182,24 @@ def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolX
 	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
 	
 # Define functions to draw each DNA base x,y relative from upper 	left corner
-def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, upsideDownLetter=None, fiveTo3=None, hydrogen=None):
+def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, color, font, upsideDownLetter=None, fiveTo3=None):
 	canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	if upsideDownLetter:
 		textId=canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)			
 	else:
 		textId=canvas.create_text(x+baseRectangleSymbolXPixelSize/2, y+baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
-	if fiveTo3 and hydrogen:
+	if fiveTo3 and gl.hydrogen:
 		drawLines(canvas, base, x+1,y + baseRectangleSymbolYPixelSize+1)
 
 	from buttoncommands import clickOnSeqRecord
 	canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, canvas, None))
 
-
-
 def drawLines(canvas: Canvas, base:str, x: int, topY: int):#y is always top
-    canvas.create_line(0, 50, 200, 50, fill="red", width=1)  # Draw a 1-pixel point
+	lineLength = 3  # Length of each vertical line
+	lineSpacing = 2  # Spacing between the lines
+	for i in range(3 if base=="C" or base=="G" else 2):
+		canvas.create_line(x+3, topY, x+3, topY + lineLength, fill="white")
+		x += lineSpacing	
 
 # Define functions to draw each DNA base x,y relative from upper left corner
 def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, length,rotated=None):

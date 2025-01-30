@@ -1,7 +1,5 @@
 from Bio.Seq import MutableSeq, Seq
 from Bio.SeqRecord import SeqRecord
-
-from util import *
 from myseqrecord import MySeqRecord
 
 class PrimerUtils:
@@ -12,6 +10,7 @@ class PrimerUtils:
         largestLength = 0
         largestOverlapInShorts = []
         # if targetDnaRecord.is
+        from util import seqToString
         complementdPrimerString:str=seqToString(primerRecordSequence).lower()
         targetDnaRecordString: str =seqToString(targetDnaRecordSequence).lower()
 
@@ -45,6 +44,7 @@ def main():
     print("primerSeq:", complementedPrimerSeq)
     print("Overlaps:", overlaps)
     print("largest:", largestInStrand)
+    from util import seqToString
     if largestInStrand:
         print("Largest Overlaps in targetDnaSequence:", largestInStrand, seqToString(targetDnaSequence)[largestInStrand[0][0]:largestInStrand[0][1]] )
         print("Largest Overlaps in primer:", largestInPrimer, seqToString(targetDnaSequence)[largestInPrimer[0][0]:largestInPrimer[0][1]] )

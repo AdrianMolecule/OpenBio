@@ -100,7 +100,7 @@ def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 		letter: str=dnaSequenceStr[i]			
 		if gl.shrink:
 			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecord.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize	
-			excitingLetter: bool= gl.mask[i]
+			excitingLetter: bool= gl.mask[i+mySequenceRecord.xStartOffsetAsLetters]
 			if excitingLetter==True:
 				spamCount=0
 				color =gl.prefs.getPreferenceValue(letter)

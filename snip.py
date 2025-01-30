@@ -1,36 +1,27 @@
-import random
+import tkinter as tk
 
-# Create a list to store the multiplications
-multiplications = []
-multiplicationsWithAnswers = []
+# Create the main window
+root = tk.Tk()
+root.title("Two Canvases Example")
 
-multPerPage=520
-pages=1
-timeInMinutes=round(multPerPage*pages*5/60,0)
-print(f"This should take about {timeInMinutes}" + " minutes at 5 seconds per multiplication\n")
-for _ in range(multPerPage*pages):
-    num1 = random.randint(10, 99)  # Random two-digit number
-    num2 = random.randint(10, 99)  # Random two-digit number
-    result=(str(num1*num2).rjust(4))
-    multiplication = f"{num1}x{num2}=        "  # Store only the multiplication with blank spaces after "="
-    multiplications.append(multiplication)
-    multiplicationWithAnswer = f"{num1}x{num2}={result}"  # Store only the multiplication with blank spaces after "="
-    multiplicationsWithAnswers.append(multiplicationWithAnswer)
-    cols=8
-# Write the multiplications to a file called 'mul.txt'
-mulString=(f"this should take about {timeInMinutes}" + " minutes\n")
-for i in range(0, len(multiplications), cols):
-    # Write 4 multiplications per line, separated by commas
-    mulString+=(",\t".join(multiplications[i:i+cols]) + "\n")
-mulStringWithAnswers=(f"this should take about {timeInMinutes}" + " minutes\n")
-for i in range(0, len(multiplicationsWithAnswers), cols):
-    # Write 4 multiplications per line, separated by commas
-    mulStringWithAnswers+=(",\t".join(multiplicationsWithAnswers[i:i+cols]) + "\n")
-print(mulString)
-print(mulStringWithAnswers)
-# Write the multiplications to a file called 'mul.txt'
-with open("mul.txt", "w") as file:
-    file.write(mulString)
-with open("mulAnswers.txt", "w") as file:
-    file.write(mulStringWithAnswers)
-print("Multiplications have been written to 'mul.txt'.")    
+# Create the first canvas (200 pixels wide)
+canvas1 = tk.Canvas(root, width=50, height=100, bg='lightblue')
+canvas1.grid(row=0, column=0, padx=10, pady=10)
+
+# Add a label to the first canvas
+label1 = tk.Label(canvas1, text="This is Canvas 1", bg='lightblue')
+label1.pack(pady=20)  # Centering the label vertically
+
+# Create the second canvas that fills the remaining space
+canvas2 = tk.Canvas(root, bg='lightgreen')
+canvas2.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
+# Add a label to the second canvas
+label2 = tk.Label(canvas2, text="This is Canvas 2", bg='lightgreen')
+label2.pack(pady=20)  # Centering the label vertically
+
+# Configure the grid to allow the second column to expand
+root.grid_columnconfigure(1, weight=1)
+
+# Start the Tkinter event loop
+root.mainloop()

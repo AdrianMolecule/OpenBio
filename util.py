@@ -47,7 +47,7 @@ def drawCanvas(canvas:Canvas )->int:
 	drawMask(canvas, yFinal)
 	# Adjust the scrollable region based on the length of the string
 	canvas.config(scrollregion=(0, 0, sequenceWidth, yFinal+40))  # Set the scrollable area
-	return 2*gl.canvasHorizontalMargin+sequenceWidth
+	return 2*gl.canvasLeftPadding+sequenceWidth
 
 #draw features from original or cached features
 def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, baseRectangleSymbolXPixelSize: int, baseRectangleSymbolYPixelSize: int, verticalSequenceSpacing: int, font: tuple[str, int], shrink: bool,bgColor):
@@ -55,9 +55,9 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, bas
 		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
 			if shrink:
-				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters+gl.maskSkipped[loc.start+mySequenceRecord.xStartOffsetAsLetters])
+				x=gl.canvasLeftPadding + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters+gl.maskSkipped[loc.start+mySequenceRecord.xStartOffsetAsLetters])
 			else:
-				x=gl.canvasHorizontalMargin + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters)
+				x=gl.canvasLeftPadding + baseRectangleSymbolXPixelSize * (loc.start+mySequenceRecord.xStartOffsetAsLetters)
 			if getLabel(feature):
 				text=getLabel(feature)[0]
 			else:	
@@ -67,7 +67,7 @@ def drawFeatures(canvas: Canvas, mySequenceRecord: MySeqRecord, yStart: int, bas
 					bgColor, loc.end - loc.start, font)
 
 def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:
-	# xStart:int,gl.canvasHorizontalMargin
+	# xStart:int,gl.canvasLeftPadding
 	fontSize:int=gl.prefs.getPreferenceValue(preference_name="fontSize")
 	shrink:int=gl.prefs.getPreferenceValue(preference_name="shrink")	
 	font:tuple[str,int]=(gl.prefs.getPreferenceValue(preference_name="fontName"),fontSize)
@@ -84,21 +84,21 @@ def drawPrimer(canvas:Canvas,mySequenceRecordPrimer:MySeqRecord, yStart:int)->in
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]		
 		if shrink and mySequenceRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
-			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
+			xLett=gl.canvasLeftPadding + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize
 		else:
-			xLett=gl.canvasHorizontalMargin + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
+			xLett=gl.canvasLeftPadding + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize
 		color="white" if not coloredBases else gl.prefs.getPreferenceValue(letter)
 		drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 		color=color, font=font, upsideDownLetter=upsideDownLetter,fiveTo3=mySequenceRecordPrimer.fiveTo3,hydrogen=hydrogen)
 		# x += baseRectangleSymbolXPixelSize # Move to the next position
 	drawFeatures(canvas, mySequenceRecordPrimer, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink,'pink')
 	if shrink:
-		maxX=gl.canvasHorizontalMargin + (len(dnaSequenceStr)-(gl.maskSkipped[i+mySequenceRecordPrimer.xStartOffsetAsLetters])*baseRectangleSymbolXPixelSize)
+		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i+mySequenceRecordPrimer.xStartOffsetAsLetters])*baseRectangleSymbolXPixelSize)
 	else:	
-		maxX=gl.canvasHorizontalMargin + (len(dnaSequenceStr)-(gl.maskSkipped[i])*baseRectangleSymbolXPixelSize)
+		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i])*baseRectangleSymbolXPixelSize)
 		
 	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecordPrimer.description[:8], 0, yStart,mySequenceRecordPrimer,  labelHeightPx=bandYEnd-yStart)	
+	eb:EnhancedButton=EnhancedButton(mySequenceRecordPrimer.description[:8], 0, yStart,mySequenceRecordPrimer,  labelHeightPx=bandYEnd-yStart)	
 	return  maxX,bandYEnd
 
 
@@ -121,7 +121,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]			
 		if shrink:
-			xLett=gl.canvasHorizontalMargin + (mySequenceRecord.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecord.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize	
+			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecord.xStartOffsetAsLetters+i])*baseRectangleSymbolXPixelSize	
 			excitingLetter: bool= gl.mask[i]
 			if excitingLetter==True:
 				spamCount=0
@@ -133,7 +133,7 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 				drawBase(letter, canvas, xLett, sequenceYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize,
 				color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3, hydrogen=hydrogen)
 		else: # NO SHRINK
-			xLett=gl.canvasHorizontalMargin + (mySequenceRecord.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize	
+			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i)*baseRectangleSymbolXPixelSize	
 			if not coloredBases:
 				color="white"
 			else:
@@ -145,10 +145,10 @@ def drawStrand(canvas:Canvas,mySequenceRecord:MySeqRecord, yStart:int)->int:
 	drawFeatures(canvas, mySequenceRecord, featureYStart, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, verticalSequenceSpacing, font, shrink, "white")
 	
 	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(canvas, mySequenceRecord.description[:8], 0, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
+	eb:EnhancedButton=EnhancedButton( mySequenceRecord.description[:8], 0, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
 	if mySequenceRecord.fiveTo3:
 		if  hydrogen : 
-			bandYEnd+=4
+			bandYEnd+=4# add a gap to draw the hydrogen bond lines
 			
 	return  xLett+baseRectangleSymbolXPixelSize,bandYEnd
 
@@ -195,7 +195,7 @@ def drawBase(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRe
 		drawLines(canvas, base, x+1,y + baseRectangleSymbolYPixelSize+1)
 
 	from buttoncommands import clickOnSeqRecord
-	canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, canvas, self.mySeqRecord))
+	canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, canvas, None))
 
 
 
@@ -341,6 +341,7 @@ def loadAndSeparateEmblSequences(emblName:str)->list[MySeqRecord]:
 		singleStranded=True if record.annotations.get("molecule_type")=="ss-DNA" else False
 		if singleStranded:
 			myRecord=MySeqRecord(record,True, True, primer=False)
+			myRecord.singleStranded=True
 			sequenceRecordList.append(myRecord)	
 		else:
 			myRecord53=MySeqRecord(record,False, True, primer=False)
@@ -390,7 +391,7 @@ def drawMask(canvas:Canvas, yStart)->int:
 	font:tuple[str,int]=(fontName,6)
 	baseRectangleSymbolXPixelSize:int=calculateBaseRectangleSymbolXPixelSize(fontSize) #in pixels
 	baseRectangleSymbolYPixelSize:int=calculateBaseRectangleSymbolYPixelSize(fontSize) #in pixels
-	x=gl.canvasHorizontalMargin
+	x=gl.canvasLeftPadding
 	y=yStart	+baseRectangleSymbolYPixelSize
 	if ruler:
 		maxLen=0
@@ -405,7 +406,7 @@ def drawMask(canvas:Canvas, yStart)->int:
 							"white",1,font)	
 			x+=	baseRectangleSymbolXPixelSize			
 		y+=	4
-	x=gl.canvasHorizontalMargin	
+	x=gl.canvasLeftPadding	
 	if gl.debug:
 		for i, bit in enumerate(gl.mask):
 			# canvas.create_rectangle( x, y, x + baseRectangleSymbolXPixelSize ,y + baseRectangleSymbolYPixelSize , 

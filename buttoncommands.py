@@ -62,6 +62,7 @@ def denaturate( canvas:Canvas):
     for sequenceRecord in Model.modelInstance.sequenceRecordList:
         sequenceRecord:MySeqRecord
         if  not sequenceRecord.isPrimer and sequenceRecord.hybridizedToStrand:
+            sequenceRecord.singleStranded=True
             sequenceRecord.hybridizedToStrand=False
     drawCanvas(canvas)
 
@@ -145,7 +146,7 @@ def elongate( canvas:Canvas):
                 
             seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
                                  description=f" {sequenceRecordPrimer.description}")
-            newRec = MySeqRecord(seqRec, singleStranded=False,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
+            newRec = MySeqRecord(seqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
             
             featureLabel=f"seed primer "+sequenceRecordPrimer.description
             if sequenceRecordPrimer.fiveTo3:     
@@ -160,35 +161,44 @@ def elongate( canvas:Canvas):
             newRec.features.insert(0,oldPrimerFeature)
             Model.modelInstance.sequenceRecordList.pop(i)
             Model.modelInstance.sequenceRecordList.insert(i, newRec)
+            newRec.singleStranded=False
             found=True
     if not found:
         messagebox.showerror("Not found", "No primer ready to elongate") 
     drawCanvas(canvas)           
               
-def clickOnSeqRecordToDelete( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
+def clickOnSeqRecordToDelete( event: tk.Event, mySeqRecord:MySeqRecord) -> None:
     # Get the coordinates of the click
     x, y = event.x, event.y
     button:EnhancedButton=event.widget
     # Find the bounding box of the text
-    bbox = canvas.bbox("current")
-    item = canvas.find_closest(x, y)  # Find the closest item to the mouse click
-    if item and canvas.type(item)=="text" : # Get the type of the item    
-        text = canvas.itemcget("current", "text")
+    bbox: tuple[int, int, int, int] = gl.canvasLeft.bbox("current")
+    item: tuple[int, ...] = gl.canvasLeft.find_closest(x, y)  # Find the closest item to the mouse click
+    if item and gl.canvasLeft.type(item)=="text" : # Get the type of the item    
+        text = gl.canvasLeft.itemcget("current", "text")
         # If the click is within the bounding box, calculate the letter clicked
         if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
             # Find the character index in the text that was clicked
             char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
             clicked_char = text[char_index]
-            print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
+            # print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
     else:
-            print(f"Action 1 was not over a character")
+            None
+            # print(f"Action 1 was not over a character")
     for i,r in enumerate(Model.modelInstance.sequenceRecordList):
         r:MySeqRecord
         if r.uniqueId ==mySeqRecord.uniqueId:
-            Model.modelInstance.sequenceRecordList.pop(i)
+            Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
+            gl.canvasLeft.delete("all")
+            if r.hybridizedToPrimer:
+                r.hybridizedToPrimer.hybridizedToStrand=None
+            if r.hybridizedToStrand:
+                r.hybridizedToStrand.hybridizedToPrimer=None                
+
             # print(f"the clicked sequence is found{r.uniqueId}")
-            drawCanvas(canvas)
+            drawCanvas(gl.canvas)
             break
+
 def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
     # Get the coordinates of the click
     x, y = event.x, event.y
@@ -203,7 +213,8 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
             # Find the character index in the text that was clicked
             char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
             clicked_char = text[char_index]
-            print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
+            screenIndex=(x-gl.canvasLeftPadding)/gl.baseRectangleSymbolXPixelSize
+            print(f" Clicked character: '{clicked_char}' at index {screenIndex} where should be {mySeqRecord._seq[int(screenIndex)]}")
     else:
             print(f"Action 1 was not over a character")
     # for i,r in enumerate(Model.modelInstance.sequenceRecordList):

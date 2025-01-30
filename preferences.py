@@ -64,6 +64,7 @@ class Preferences:
                 # If the selected preference is a nucleotide color (A, T, C, G), directly open the color chooser
                 if selectedPref.name in ['A', 'T', 'C', 'G']: 
                     self.pickColor(selectedPref, listbox)
+                    self.updateGlobalCache()
                     self.updateCallback()   
                 else:
                     self.editNonColorPreference(selectedPref, listbox)
@@ -99,7 +100,8 @@ class Preferences:
         """ Update the preference value and refresh the UI. """
         preference.set_value(new_value)
         if listbox:
-            self.updatePreferencesDisplay(listbox)  # Update the listbox in the popup
+            self.updatePreferencesDisplay(listbox)  # Update the listbox in the popu
+
 
     def editNonColorPreference(self, preference:Preference, listbox):
         def apply_changes(event=None):
@@ -112,6 +114,7 @@ class Preferences:
 
             # Update the listbox in the popup and main window after saving
             self.updatePreferencesDisplay(listbox)  # Update the popup's listbox
+            Preferences.updateGlobalCache()
             self.updateCallback()   
             # Do not destroy popup immediately; keep it open and modal
             popup.grab_set()  # Reapply grab_set to ensure it remains modal
@@ -123,6 +126,7 @@ class Preferences:
             self.updatePreferenceValue(preference, preference.get_value(), listbox)
             # Update the listbox in the popup and main window after reset
             self.updatePreferencesDisplay(listbox)  # Update the popup's listbox
+            self.updateGlobalCache()
             self.updateCallback() 
             popup.grab_set()  # Reapply grab_set to ensure it remains modal            
             popup.destroy()
@@ -195,15 +199,15 @@ class Preferences:
         # 
         p:dict[str,Preference] = {
             "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/porkcomplete.embl", str,"Path to the default file"),
-            "canvasHorizontalMargin":   Preference("canvasHorizontalMargin", int,  0, int,"Horizontal margin for the canvas"),
+            "canvasLeftPadding":   Preference("canvasLeftPadding", int,  0, int,"Horizontal margin for the canvas"),
             "fontName":                 Preference("fontName", str, "Arial",  str,"Font type for the canvas"),
             "fontSize":                 Preference("fontSize", int, 10, int,"Font type for the canvas"),
-            "horizontalPixelsMargin":   Preference("horizontalPixelsMargin", int,  2,int, "Horizontal pixel margin for layout"),
-            "verticalPixelsMargin":     Preference("verticalPixelsMargin", int, 2,  int,"Vertical pixel margin for layout"),
+            "horizontalPixelsMargin":   Preference("horizontalPixelsMargin", int,  2,int, "head room between the base letter and it's holding box"),
+            "verticalPixelsMargin":     Preference("verticalPixelsMargin", int, 2,  int,"Vertical head room between the base letter and it's holding box"),
             "verticalSequenceSpacing":  Preference("verticalSequenceSpacing", int, 15,  int,"Vertical sequence spacing"),
             "coloredBases":             Preference("coloredBases", bool, True, convertToBool, "Enable or disable colored bases in the sequence"),
             "rotated":             Preference("rotated", bool, True, convertToBool, "Show complementary strand bases upside down"),
-            "shrink":             Preference("shrink", bool, False, convertToBool, "Shrinks the sequence and keeps features"),
+            "shrink":             Preference("shrink", bool, True, convertToBool, "Shrinks the sequence and keeps features"),
             "A":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
             "T":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),
             "G":                        Preference( "G", str, "lime green", str,"Color for Guanine (G)"),
@@ -213,10 +217,25 @@ class Preferences:
             "maxPrimerLength":            Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer"),
             "hydrogen":             Preference("hydrogen", bool, True, convertToBool, "adds hydrogen links"),
             "ruler":             Preference("ruler", bool, True, convertToBool, " draws coordinates for elements"),
+            "leftButtonsWidth":             Preference("leftButtonsWidth", int, 16, int, " width on show info butttons on the left"),
         }
-        # print("name:",p.get("fontName").name," end value")
         return p
-    
+
+    def updateGlobalCache():
+        gl.fontName= sh=gl.prefs.getPreferenceValue(preference_name="fontName")
+        gl.fontSize= sh=gl.prefs.getPreferenceValue(preference_name="fontSize")
+        gl.horizontalPixelsMargin=gl.prefs.getPreferenceValue(preference_name="horizontalPixelsMargin")
+        gl.canvasLeftPadding=gl.prefs.getPreferenceValue(preference_name="canvasLeftPadding")
+        gl.baseRectangleSymbolXPixelSize=gl.fontSize+gl.horizontalPixelsMargin
+        gl.baseRectangleSymbolYPixelSize= gl.baseRectangleSymbolXPixelSize
+        gl.shrink=gl.prefs.getPreferenceValue(preference_name="shrink")	
+        gl.coloredBases=gl.prefs.getPreferenceValue(preference_name="coloredBases")
+        gl.rotated=gl.prefs.getPreferenceValue(preference_name="rotated")
+        gl.verticalSequenceSpacing=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")
+        gl.hydrogen=gl.prefs.getPreferenceValue(preference_name="hydrogen")
+        gl.ruler=gl.prefs.getPreferenceValue(preference_name="ruler")
+        gl.leftButtonsWidth=gl.prefs.getPreferenceValue(preference_name="leftButtonsWidth")
+
     def dump(self):
         for key, p in self.preferences.items():
             p.dump()

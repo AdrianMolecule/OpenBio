@@ -25,8 +25,34 @@ class MySeqRecord(SeqRecord):
         MySeqRecord.uniqueId+=1
 
     def __str__(self):
-            # Customize how the item is printed
-            return f"Item: {self.value}"
+        collectDict = {}            
+        # collectDict the attributes from the parent SeqRecord class
+        collectDict['id'] = str(self.id)
+        collectDict['name'] = str(self.name)
+        collectDict['description'] = self.description
+        
+        # collectDict additional attributes from MySeqRecord
+        collectDict['singleStranded'] = str(self.singleStranded)
+        collectDict['isPrimer'] =  str(self.isPrimer)
+        collectDict['fiveTo3'] =  str(self.fiveTo3)
+        collectDict['xStartOffsetAsLetters'] =  str(self.xStartOffsetAsLetters)
+        if self.hybridizedToStrand:
+            collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+"-"+str("5 to 3 " if self.fiveTo3 else "3 to 5")
+        if self.hybridizedToPrimer:
+            collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
+        collectDict['uniqueId'] =  str(self.uniqueId)
+        collectDict['annotations'] =  str(self.annotations)
+        collectDict['seq'] = self.seq._data.decode('ASCII')
+        featuresString=""
+        for f in self.features:
+            featuresString+=str(f.location)+f.qualifiers.get("label")[0]
+            featuresString+="\n"
+        collectDict['features'] = featuresString
+        collectDict['dbxrefs'] =  str(self.dbxrefs)
+        s=""
+        for key in collectDict:
+            s+=key+":"+collectDict[key]+"\n"
+        return s
 
     def __repr__(self):
         # Customize the representation of the item

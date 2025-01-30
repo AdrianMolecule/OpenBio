@@ -126,7 +126,7 @@ class Preferences:
             self.updatePreferenceValue(preference, preference.get_value(), listbox)
             # Update the listbox in the popup and main window after reset
             self.updatePreferencesDisplay(listbox)  # Update the popup's listbox
-            self.updateGlobalCache()
+            Preferences.updateGlobalCache()
             self.updateCallback() 
             popup.grab_set()  # Reapply grab_set to ensure it remains modal            
             popup.destroy()
@@ -216,7 +216,7 @@ class Preferences:
             "minPrimerOverlapLength":   Preference( "minPrimerOverlapLength", int, 18,  int,"minimal length for a primer"),
             "maxPrimerLength":          Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer"),
             "hydrogen":                 Preference("hydrogen", bool, True, convertToBool, "adds hydrogen links"),
-            "hydrogenLinesLength":      Preference("hydrogenLinesLength", bool, 4, int, "the length of hydrogen links in pixels"),
+            "hydrogenLinesLength":      Preference("hydrogenLinesLength", int, 4, int, "the length of hydrogen links in pixels"),
             "ruler":                    Preference("ruler", bool, True, convertToBool, " draws coordinates for elements"),
             "leftButtonsWidth":         Preference("leftButtonsWidth", int, 16, int, " width on show info butttons on the left"),
         }

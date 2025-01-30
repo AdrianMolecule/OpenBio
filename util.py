@@ -593,8 +593,7 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
     #     r:MySeqRecord
     #     if r.uniqueId ==mySeqRecord.uniqueId:
     #         Model.modelInstance.sequenceRecordList.pop(i)
-    #         # print(f"the clicked sequence is found{r.uniqueId}")
-    #         drawCanvas(canvas)
+    #         # print(f"the clicked sequence is found{r.uniqueId}")#         drawCanvas(canvas)
     #         break
 
 # def clickOnSeqRecordToDisplayInfo( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:

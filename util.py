@@ -26,7 +26,6 @@ from main import UiApp
 horizontalPixelsMargin=2 # head room between the base letter and it's holding box
 
 def drawCanvas( )->int:
-	buildMask()
 	yPos:int = 0  # y is 0 at top and increases downwards	
 	# Clear any previous drawings
 	gl.canvas.delete("all")
@@ -440,8 +439,9 @@ from primers import PrimerUtils
 
 
 def refresh():
-    gl.canvasLeft.delete("all")
-    drawCanvas()     
+	buildMask()
+	gl.canvasLeft.delete("all")
+	drawCanvas()     
 
 def addPrimerHandler(canvas:Canvas)->Seq:
     seqRecList, filePath= loadFile()
@@ -558,7 +558,7 @@ def elongate( canvas:Canvas):
         if sequenceRecordPrimer.isPrimer and sequenceRecordPrimer.hybridizedToStrand:    
             if sequenceRecordPrimer.fiveTo3:     
                 subsequence: Seq = Seq(sequenceRecordPrimer.seq+ sequenceRecordPrimer.hybridizedToStrand.seq[len(sequenceRecordPrimer)
-                                                                                                             -sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters:].complement())
+					+sequenceRecordPrimer.xStartOffsetAsLetters -sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters:].complement())
             else:
                 #subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
                 subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-

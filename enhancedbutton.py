@@ -6,11 +6,9 @@ class EnhancedButton:
     def __init__(self, text, x, y, mySeqRecord:MySeqRecord, labelHeightPx):
         # Initialize button properties
         y+=2 # to deal with some alignments between the 2 canvases
-        self.text = text 
+        # self.text = text 
         self.mySeqRecord=mySeqRecord    
         self.popupWindow = None
-        # Create the label
-        labelDescription = gl.canvasLeft.create_rectangle(x , y,   x + gl.leftButtonsWidth , y + labelHeightPx-8,  fill="lightblue", outline="black", width=1)
         # Create text inside the rectangle to represent the label's text
         labelDelete = gl.canvasLeft.create_rectangle(x , y+labelHeightPx-7,   x + gl.leftButtonsWidth , y+labelHeightPx,  fill="red", outline="black", width=1)
         from util import clickOnSeqRecordToDelete
@@ -39,7 +37,8 @@ class EnhancedButton:
             if popupWindow is not None and popupWindow.winfo_exists():
                 popupWindow.destroy()  # Close the pop-up         
                             
-        textDescription_id=gl.canvasLeft.create_text(x+gl.leftButtonsWidth//2, y+labelHeightPx//2, text=text, font=("Arial", 8), angle=90, fill="black")
+        gl.canvasLeft.create_rectangle(x , y,   x + gl.leftButtonsWidth , y + labelHeightPx-8,  fill="lightblue", outline="black", width=1)
+        textDescription_id=gl.canvasLeft.create_text(x+gl.leftButtonsWidth//2, y+labelHeightPx-9, text=text, font=("Arial", 8), angle=90, fill="black", anchor="w")
         gl.canvasLeft.tag_bind(textDescription_id, "<Enter>", lambda event, text_id=textDescription_id: on_hover(event))  # Mouse enters
         gl.canvasLeft.tag_bind(textDescription_id, "<Leave>", lambda event, text_id=textDescription_id: on_leave(event))  # Mouse leaves
 

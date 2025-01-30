@@ -168,5 +168,5 @@ if __name__ == "__main__":
     app = UiApp(root)
     loadModel(default=True)
     app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-    drawCanvas()
+    refresh()
     root.mainloop()

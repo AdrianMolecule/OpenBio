@@ -65,7 +65,7 @@ class UiApp:
         addFileButton.grid(row=0, column=column, padx=3)
         column+=1     
         # add primer   
-        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimerHandler(self.canvas))
+        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimerHandler())
         addPrimerButton.grid(row=0, column=column, padx=3)
         column+=1  
         # Create zoom in button      
@@ -103,15 +103,15 @@ class UiApp:
         self.stepsButtonBar.grid(row=2, column=1, padx=5, pady=3, sticky=( "ew")) 
         # denaturate
         column=0
-        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate(self.canvas))
+        buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate())
         buttonDenaturate.grid(row=0, column=column)      
         column+=1   
         # aneal
-        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers(self.canvas))
+        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers())
         buttonAneal.grid(row=0, column=column)   
         column+=1   
         #Elongate
-        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate(self.canvas))
+        buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate())
         buttonElongate.grid(row=0, column=column)   
 
 

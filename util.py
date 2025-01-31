@@ -234,30 +234,30 @@ def printCanvas():
 	# filePath=str(Path(__file__).resolve().parent)+"/junk"
 	# canvas.postscript(file=filePath, colormode='color')
  	# # Get the canvas's total scrollable area (scrollregion)
-    scrollregion = gl.canvas.bbox("all")  # Returns (x1, y1, x2, y2)    
-    if scrollregion:
-        x1, y1, x2, y2 = scrollregion
-        
-        # Get the position of the canvas on the screen
-        canvas_x = gl.canvas.winfo_rootx()
-        canvas_y = gl.canvas.winfo_rooty()
+	scrollregion = gl.canvas.bbox("all")  # Returns (x1, y1, x2, y2)    
+	if scrollregion:
+		x1, y1, x2, y2 = scrollregion
+		
+		# Get the position of the canvas on the screen
+		canvas_x = gl.canvas.winfo_rootx()
+		canvas_y = gl.canvas.winfo_rooty()
 
-        # Calculate the full area of the canvas to capture
-        capture_x1 = canvas_x + x1
-        capture_y1 = canvas_y + y1
-        capture_x2 = canvas_x + x2
-        capture_y2 = canvas_y + y2
+		# Calculate the full area of the canvas to capture
+		capture_x1 = canvas_x + x1
+		capture_y1 = canvas_y + y1
+		capture_x2 = canvas_x + x2
+		capture_y2 = canvas_y + y2
 
-        # Capture the entire scrollable area of the canvas
-        img = ImageGrab.grab(bbox=(capture_x1, capture_y1, capture_x2, capture_y2), all_screens=True)
-        
-        # Ask the user for a file name and save the image
-        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
-        if file_path:
-            img.save(file_path)
-            print(f"Canvas content saved to {file_path}")
-    else:
-        print("Canvas has no scrollable content.")
+		# Capture the entire scrollable area of the canvas
+		img = ImageGrab.grab(bbox=(capture_x1, capture_y1, capture_x2, capture_y2), all_screens=True)
+		
+		# Ask the user for a file name and save the image
+		file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+		if file_path:
+			img.save(file_path)
+			print(f"Canvas content saved to {file_path}")
+	else:
+		print("Canvas has no scrollable content.")
 
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
@@ -393,208 +393,212 @@ def refresh():
 	gl.canvasLeft.delete("all")
 	drawCanvas()     
 
-def addPrimerHandler(canvas:Canvas)->Seq:
-    seqRecList, filePath= loadFile()
-    if len(seqRecList)>1:
-        messagebox.showerror("Too many sequences", f" A primer should contain ony one sequence and this one contains {len(seqRecList)}") 
-        return None
-    newRecord: MySeqRecord = seqRecList[0]
-    if not newRecord.annotations.get("molecule_type")=="ss-DNA":
-        messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
-        return None
-    # add a feature spanning the full length of the primer
-    mandatoryFeatureText="None"
-    if newRecord.description !="":
-        mandatoryFeatureText=newRecord.description# this is what is shown
-    else:        
-        mandatoryFeatureText="AddedFeature"
-    mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=None), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
-    newRecord.features.append(mandatoryFeature)   
-    myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
-    leng=len(myRecord.seq) 
-    minLen=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
-    maxLen=gl.prefs.getPreferenceValue("maxPrimerLength")
-    if leng< minLen:
-        messagebox.showerror("Invalid Primer", f"primer length: {len} is smaller than minimal primar length {minLen}") 
-        return
-    if leng> maxLen:
-        messagebox.showerror("Invalid Primer", f"primer length: {len} is larger than maximum primar length {maxLen}") 
-        return
-    myRecord.isPrimer=True
-    myRecord.singleStranded=True
-    myRecord.fiveTo3=True
-    myRecord.hybridizedToStrand=None
-    Model.modelInstance.sequenceRecordList.append(myRecord)
-    # Model.modelInstance.dumpModel("in main")
-    refresh() 
+def addPrimerHandler()->Seq:
+	seqRecList, filePath= loadFile()
+	if len(seqRecList)>1:
+		messagebox.showerror("Too many sequences", f" A primer should contain ony one sequence and this one contains {len(seqRecList)}") 
+		return None
+	newRecord: MySeqRecord = seqRecList[0]
+	if not newRecord.annotations.get("molecule_type")=="ss-DNA":
+		messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
+		return None
+	# add a feature spanning the full length of the primer
+	mandatoryFeatureText="None"
+	if newRecord.description !="":
+		mandatoryFeatureText=newRecord.description# this is what is shown
+	else:        
+		mandatoryFeatureText="AddedFeature"
+	mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=None), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
+	newRecord.features.append(mandatoryFeature)   
+	myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
+	leng=len(myRecord.seq) 
+	minLen=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
+	maxLen=gl.prefs.getPreferenceValue("maxPrimerLength")
+	if leng< minLen:
+		messagebox.showerror("Invalid Primer", f"primer length: {len} is smaller than minimal primar length {minLen}") 
+		return
+	if leng> maxLen:
+		messagebox.showerror("Invalid Primer", f"primer length: {len} is larger than maximum primar length {maxLen}") 
+		return
+	myRecord.isPrimer=True
+	myRecord.singleStranded=True
+	myRecord.fiveTo3=True
+	myRecord.hybridizedToStrand=None
+	Model.modelInstance.sequenceRecordList.append(myRecord)
+	# Model.modelInstance.dumpModel("in main")
+	refresh() 
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
-def denaturate( canvas:Canvas):
-    for sequenceRecord in Model.modelInstance.sequenceRecordList:
-        sequenceRecord:MySeqRecord
-        if  sequenceRecord.hybridizedToStrand or sequenceRecord.hybridizedToPrimer:
-            sequenceRecord.hybridizedToStrand=False
-            sequenceRecord.hybridizedToPrimer=False
-            sequenceRecord.singleStranded=True
-    refresh() 
+def denaturate( ):
+	for sequenceRecord in Model.modelInstance.sequenceRecordList:
+		sequenceRecord:MySeqRecord
+		if  sequenceRecord.hybridizedToStrand or sequenceRecord.hybridizedToPrimer:
+			sequenceRecord.hybridizedToStrand=False
+			sequenceRecord.hybridizedToPrimer=False
+			sequenceRecord.singleStranded=True
+	refresh() 
 
-def anealPrimers(canvas:Canvas ):
-    found:bool=False
-    minOverlapLength:int=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
-    for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
-        sequenceRecordPrimer:MySeqRecord
-        if sequenceRecordPrimer.isPrimer and not sequenceRecordPrimer.hybridizedToStrand :
-            complementedPrimerSeq:Seq=sequenceRecordPrimer.seq.complement()
-            complementedReversedPrimerSeq:Seq=sequenceRecordPrimer.seq.reverse_complement()
-            for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList):
-                strandRegularRecord: MySeqRecord
-                # check is not blocked by another strand or the same primer
-                if not strandRegularRecord.hybridizedToStrand and not strandRegularRecord.isPrimer and (not strandRegularRecord.hybridizedToPrimer or
-                    (strandRegularRecord.hybridizedToPrimer and sequenceRecordPrimer.uniqueId!=strandRegularRecord.hybridizedToPrimer.uniqueId)): #and not strandRegularRecord.hybridizedToPrimer: # adrian avoid adding the same primer twice on same strand
-                    if strandRegularRecord.fiveTo3: # <----
-                        # print("Testing 5to3",strandRegularRecord.seq) 
-                        overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedReversedPrimerSeq, minOverlapLength=minOverlapLength)
-                        if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
-                            messagebox.showinfo("Problem", f"primer {sequenceRecordPrimer.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
-                            return
-                        if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
-                            found=True
-                            sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
-                            # change feature location
-                            Model.modelInstance.sequenceRecordList[p].hybridizedToStrand=Model.modelInstance.sequenceRecordList[s]
-                            Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]  
-                            primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
-                            primRec.fiveTo3=False
-                            primRec.seq=Seq(seqToString(primRec.seq)[::-1])# reverses the string
-                            Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
-                    else:  
-                        # print("Testing 3to5",strandRegularRecord.seq)                 
-                        overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq, minOverlapLength=minOverlapLength)                      
-                        if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
-                            messagebox.showinfo("Problem", f"primer {sequenceRecordPrimer.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
-                            return
-                        if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
-                            found=True
-                            sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
-                            Model.modelInstance.sequenceRecordList[p].hybridizedToStrand=Model.modelInstance.sequenceRecordList[s]
-                            Model.modelInstance.sequenceRecordList[s].hybridizedToPrimer=Model.modelInstance.sequenceRecordList[p]
-                            primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
-                            primRec.fiveTo3=True
-                            Model.modelInstance.sequenceRecordList.insert(s,primRec)    
-    if found:
-        # gl.prefs.set_preference_value("shrink", False)
-        refresh()                                           
-    else:
-        names:str=""
-        for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
-            if sequenceRecordPrimer.isPrimer and not sequenceRecordPrimer.hybridizedToStrand :
-                 names+=(", "+sequenceRecordPrimer.description)
-    
-        messagebox.showinfo("No Anealing", f"Primers {names} do not anneal to any present sequence") 
+def anealPrimers( ):
+	found:bool=False
+	minOverlapLength:int=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
+	for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
+		sequenceRecordPrimer:MySeqRecord
+		if sequenceRecordPrimer.isPrimer and not sequenceRecordPrimer.hybridizedToStrand :
+			complementedPrimerSeq:Seq=sequenceRecordPrimer.seq.complement()
+			complementedReversedPrimerSeq:Seq=sequenceRecordPrimer.seq.reverse_complement()
+			for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList):
+				strandRegularRecord: MySeqRecord
+				# check is not blocked by another strand or the same primer
+				if not strandRegularRecord.hybridizedToStrand and not strandRegularRecord.isPrimer and (not strandRegularRecord.hybridizedToPrimer or
+					(strandRegularRecord.hybridizedToPrimer and sequenceRecordPrimer.uniqueId!=strandRegularRecord.hybridizedToPrimer.uniqueId)): #and not strandRegularRecord.hybridizedToPrimer: # adrian avoid adding the same primer twice on same strand
+					if strandRegularRecord.fiveTo3: # <----
+						# print("Testing 5to3",strandRegularRecord.seq) 
+						overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedReversedPrimerSeq, minOverlapLength=minOverlapLength)
+						if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
+							messagebox.showinfo("Problem", f"primer {sequenceRecordPrimer.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
+							return
+						if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
+							found=True
+							sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
+							# change feature location
+							sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
+							strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
+							primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+							primRec.fiveTo3=False
+							primRec.seq=Seq(seqToString(primRec.seq)[::-1])# reverses the string
+							Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
+					else:  # strand is 3 to 5
+						# print("Testing 3to5",strandRegularRecord.seq)                 
+						overlaps, largestOverlapsInStrand, largestOverlapInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq, minOverlapLength=minOverlapLength)                      
+						if largestOverlapsInStrand and len (largestOverlapsInStrand)>1:
+							messagebox.showinfo("Problem", f"primer {sequenceRecordPrimer.seq} can bind {len (largestOverlapsInStrand)} times to strand {strandRegularRecord.seq} ") 
+							return
+						if largestOverlapsInStrand and len (largestOverlapsInStrand)==1:
+							if not found:
+								found=True
+							else:
+								messagebox.showwarning("Warning","multiple anealing sites. Anealing to first target only")
+								refresh()
+								return
+							sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
+							sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
+							strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
+							primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+							primRec.fiveTo3=True
+							Model.modelInstance.sequenceRecordList.insert(s,primRec)    
+	if found:
+		refresh()                                           
+	else:
+		names:str=""
+		for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
+			if sequenceRecordPrimer.isPrimer and not sequenceRecordPrimer.hybridizedToStrand :
+				names+=(", "+sequenceRecordPrimer.description)
+	
+		messagebox.showinfo("No Anealing", f"Primers {names} do not anneal to any present sequence") 
 
 
-def toggleShrink( canvas:Canvas):
-    p=gl.shrink
-    if p:
-          gl.prefs.setPreferenceValue("shrink", False)
-    else:
-          gl.prefs.setPreferenceValue("shrink", True)
-    refresh()            
-              
+def toggleShrink( ):
+	p=gl.shrink
+	if p:
+		gl.prefs.setPreferenceValue("shrink", False)
+	else:
+		gl.prefs.setPreferenceValue("shrink", True)
+	refresh()            
+			  
 
-def elongate( canvas:Canvas):
-    found:bool=False
-    for i, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
-        sequenceRecordPrimer:MySeqRecord
-        if sequenceRecordPrimer.isPrimer and sequenceRecordPrimer.hybridizedToStrand:    
-            if sequenceRecordPrimer.fiveTo3:     
-                subsequence: Seq = Seq(sequenceRecordPrimer.seq+ sequenceRecordPrimer.hybridizedToStrand.seq[len(sequenceRecordPrimer)
+def elongate():
+	found:bool=False
+	for i, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
+		sequenceRecordPrimer:MySeqRecord
+		if sequenceRecordPrimer.isPrimer and sequenceRecordPrimer.hybridizedToStrand:    
+			if sequenceRecordPrimer.fiveTo3:     
+				subsequence: Seq = Seq(sequenceRecordPrimer.seq+ sequenceRecordPrimer.hybridizedToStrand.seq[len(sequenceRecordPrimer)
 					+sequenceRecordPrimer.xStartOffsetAsLetters -sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters:].complement())
-            else:
-                #subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
-                subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
-                                                                                   sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+
-                sequenceRecordPrimer.seq)
-                
-            seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
-                                 description=f" {sequenceRecordPrimer.description}")
-            newRec = MySeqRecord(seqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
-            
-            featureLabel=f"seed primer "+sequenceRecordPrimer.description
-            if sequenceRecordPrimer.fiveTo3:     
-                newRec.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
-                oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
-            else:
-                oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters, sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
-                newRec.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters     
-            newRec.hybridizedToPrimer=False
-            newRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand
-            newRec.uniqueId=sequenceRecordPrimer.uniqueId    
-            newRec.features.insert(0,oldPrimerFeature)
-            Model.modelInstance.sequenceRecordList.pop(i)
-            Model.modelInstance.sequenceRecordList.insert(i, newRec)
-            newRec.singleStranded=False
-            found=True
-    if not found:
-        messagebox.showerror("Not found", "No primer ready to elongate") 
-    refresh()            
-              
+			else:
+				#subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
+				subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
+																				   sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+
+				sequenceRecordPrimer.seq)
+				
+			seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
+								 description=f" {sequenceRecordPrimer.description}")
+			newRec = MySeqRecord(seqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
+			
+			featureLabel=f"seed primer "+sequenceRecordPrimer.description
+			if sequenceRecordPrimer.fiveTo3:     
+				newRec.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
+				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
+			else:
+				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters, sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
+				newRec.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters     
+			newRec.hybridizedToPrimer=False
+			newRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand
+			newRec.uniqueId=sequenceRecordPrimer.uniqueId    
+			newRec.features.insert(0,oldPrimerFeature)
+			Model.modelInstance.sequenceRecordList.pop(i)
+			Model.modelInstance.sequenceRecordList.insert(i, newRec)
+			newRec.singleStranded=False
+			found=True
+	if not found:
+		messagebox.showerror("Not found", "No primer ready to elongate") 
+	refresh()            
+			  
 def clickOnSeqRecordToDelete( event: tk.Event, mySeqRecord:MySeqRecord) -> None:
-    # Get the coordinates of the click
-    x, y = event.x, event.y
-    button:EnhancedButton=event.widget
-    # Find the bounding box of the text
-    bbox: tuple[int, int, int, int] = gl.canvasLeft.bbox("current")
-    item: tuple[int, ...] = gl.canvasLeft.find_closest(x, y)  # Find the closest item to the mouse click
-    if item and gl.canvasLeft.type(item)=="text" : # Get the type of the item    
-        text = gl.canvasLeft.itemcget("current", "text")
-        # If the click is within the bounding box, calculate the letter clicked
-        if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
-            # Find the character index in the text that was clicked
-            char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
-            clicked_char = text[char_index]
-            # print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
-    else:
-            None
-            # print(f"Action 1 was not over a character")
-    for i,r in enumerate(Model.modelInstance.sequenceRecordList):
-        r:MySeqRecord
-        if r.uniqueId ==mySeqRecord.uniqueId:
-            Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
-            gl.canvasLeft.delete("all")
-            if r.hybridizedToPrimer:
-                r.hybridizedToPrimer.hybridizedToStrand=None
-            if r.hybridizedToStrand:
-                r.hybridizedToStrand.hybridizedToPrimer=None                
+	# Get the coordinates of the click
+	x, y = event.x, event.y
+	button:EnhancedButton=event.widget
+	# Find the bounding box of the text
+	bbox: tuple[int, int, int, int] = gl.canvasLeft.bbox("current")
+	item: tuple[int, ...] = gl.canvasLeft.find_closest(x, y)  # Find the closest item to the mouse click
+	if item and gl.canvasLeft.type(item)=="text" : # Get the type of the item    
+		text = gl.canvasLeft.itemcget("current", "text")
+		# If the click is within the bounding box, calculate the letter clicked
+		if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+			# Find the character index in the text that was clicked
+			char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
+			clicked_char = text[char_index]
+			# print(f"Action 1 triggered: {text}, Clicked character: '{clicked_char}'")
+	else:
+			None
+			# print(f"Action 1 was not over a character")
+	for i,r in enumerate(Model.modelInstance.sequenceRecordList):
+		r:MySeqRecord
+		if r.uniqueId ==mySeqRecord.uniqueId:
+			Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
+			gl.canvasLeft.delete("all")
+			if r.hybridizedToPrimer:
+				r.hybridizedToPrimer.hybridizedToStrand=None
+			if r.hybridizedToStrand:
+				r.hybridizedToStrand.hybridizedToPrimer=None                
 
-            # print(f"the clicked sequence is found{r.uniqueId}")
-            refresh()
-            break
+			# print(f"the clicked sequence is found{r.uniqueId}")
+			refresh()
+			break
 
 def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
-    # Get the coordinates of the click
-    x, y = event.x, event.y
-    button:EnhancedButton=event.widget
-    # Find the bounding box of the text
-    bbox = canvas.bbox("current")
-    item = canvas.find_closest(x, y)  # Find the closest item to the mouse click
-    if item and canvas.type(item)=="text" : # Get the type of the item    
-        text = canvas.itemcget("current", "text")
-        # If the click is within the bounding box, calculate the letter clicked
-        if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
-            # Find the character index in the text that was clicked
-            char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
-            clicked_char = text[char_index]
-            screenIndex=(x-gl.canvasLeftPadding)/gl.baseRectangleSymbolXPixelSize
-            print(f" Clicked character: '{clicked_char}' at index {screenIndex} where should be {mySeqRecord._seq[int(screenIndex)]}")
-    else:
-            print(f"Action 1 was not over a character")
-    # for i,r in enumerate(Model.modelInstance.sequenceRecordList):
-    #     r:MySeqRecord
-    #     if r.uniqueId ==mySeqRecord.uniqueId:
-    #         Model.modelInstance.sequenceRecordList.pop(i)
-    #         # print(f"the clicked sequence is found{r.uniqueId}")#         drawCanvas(canvas)
-    #         break
+	# Get the coordinates of the click
+	x, y = event.x, event.y
+	button:EnhancedButton=event.widget
+	# Find the bounding box of the text
+	bbox = canvas.bbox("current")
+	item = canvas.find_closest(x, y)  # Find the closest item to the mouse click
+	if item and canvas.type(item)=="text" : # Get the type of the item    
+		text = canvas.itemcget("current", "text")
+		# If the click is within the bounding box, calculate the letter clicked
+		if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+			# Find the character index in the text that was clicked
+			char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
+			clicked_char = text[char_index]
+			screenIndex=(x-gl.canvasLeftPadding)/gl.baseRectangleSymbolXPixelSize
+			print(f" Clicked character: '{clicked_char}' at index {screenIndex} where should be {mySeqRecord._seq[int(screenIndex)]}")
+	else:
+			print(f"Action 1 was not over a character")
+	# for i,r in enumerate(Model.modelInstance.sequenceRecordList):
+	#     r:MySeqRecord
+	#     if r.uniqueId ==mySeqRecord.uniqueId:
+	#         Model.modelInstance.sequenceRecordList.pop(i)
+	#         # print(f"the clicked sequence is found{r.uniqueId}")#         drawCanvas(canvas)
+	#         break
 
 # def clickOnSeqRecordToDisplayInfo( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
 #     # Get the coordinates of the click

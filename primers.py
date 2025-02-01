@@ -3,12 +3,12 @@ from Bio.SeqRecord import SeqRecord
 from myseqrecord import MySeqRecord
 
 class PrimerUtils:
-
+    # return a list of tuples each containig a start and an end
     def findPrimerOverlaps(targetDnaRecordSequence:Seq, primerRecordSequence:Seq, minOverlapLength):
         overlapStartsEnds = set()
         largestOverlaps = []
         largestLength = 0
-        largestOverlapInShorts = []
+        largestOverlapsInShorts = []
         # if targetDnaRecord.is
         from util import seqToString
         complementdPrimerString:str=seqToString(primerRecordSequence).lower()
@@ -23,13 +23,13 @@ class PrimerUtils:
                     if len(subShort) > largestLength:
                         largestLength = len(subShort)
                         largestOverlaps: list[tuple[int, int]] = [(index, index + len(subShort) - 1)]
-                        largestOverlapInShorts: list[tuple[int, int]] = [(i, j - 1)]
+                        largestOverlapsInShorts: list[tuple[int, int]] = [(i, j - 1)]
                     elif len(subShort) == largestLength:
                         largestOverlaps.append((index, index + len(subShort) - 1))
-                        largestOverlapInShorts.append((i, j - 1))
+                        largestOverlapsInShorts.append((i, j - 1))
                     index = targetDnaRecordString.find(subShort, index + 1)
 
-        return list(overlapStartsEnds), largestOverlaps, largestOverlapInShorts
+        return list(overlapStartsEnds), largestOverlaps, largestOverlapsInShorts
 
 
 def main():

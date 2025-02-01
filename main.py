@@ -77,11 +77,11 @@ class UiApp:
         buttonZo.grid(row=0, column=column, padx=3)
         # print
         column+=1           
-        buttonPrint = tk.Button(self.bottomButtonBar, text="Print", command=lambda: self.printCanvas(self.canvas))
+        buttonPrint = tk.Button(self.bottomButtonBar, text="Print", command=lambda: self.printCanvas())
         buttonPrint.grid(row=0, column=column, padx=3)
         column+=1
         #shrink
-        buttonShrink = tk.Button(self.bottomButtonBar, text="Toggle Shrink", command=lambda:toggleShrink(self.canvas))
+        buttonShrink = tk.Button(self.bottomButtonBar, text="Toggle Shrink", command=lambda:toggleShrink())
         buttonShrink.grid(row=0, column=column, padx=3)   
         #refresh
         column+=1        

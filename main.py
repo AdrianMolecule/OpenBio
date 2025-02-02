@@ -113,6 +113,10 @@ class UiApp:
         #Elongate
         buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate())
         buttonElongate.grid(row=0, column=column)   
+        column+=1 
+        #Hairpin
+        buttonHairpins = tk.Button(self.stepsButtonBar, text="Detect Hairpins", command=lambda:hairpins())
+        buttonHairpins.grid(row=0, column=column)   
 
 
     def exitApplication(self):
@@ -124,6 +128,7 @@ class UiApp:
         fileMenu = Menu(menuBar, tearoff=0)
         fileMenu.add_command(label="Load File", command=lambda:self.loadSequencesHandler())
         menuBar.add_cascade(label="File", menu=fileMenu)
+        fileMenu.add_command(label="Save File", command=lambda:self.saveSequencesHandler())
         # menu: Preferences
         preferencesMenu = Menu(menuBar, tearoff=0)
         preferencesMenu.add_command(label="Preferences", command=self.updatePreferences)
@@ -139,12 +144,15 @@ class UiApp:
         gl.prefs.openPreferencesPopup()       
 
     def loadSequencesHandler(self)->Seq:
-        loadModel(False, append=False)
+        loadModel(append=False)
         self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
         refresh()  
 
+    def saveSequencesHandler(self)->Seq:
+        saveModel()
+
     def addSequencesHandler(self)->Seq:
-        loadModel(False, append=True)
+        loadModel( append=True)
         self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
         refresh()  
 
@@ -166,7 +174,12 @@ class UiApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = UiApp(root)
-    loadModel(default=True)
+    defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
+    if defaultTestFileValue == "":
+        loadModel()
+    else:
+        defaultTestFilePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
+        loadModel(filePath=defaultTestFilePath)
     app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
     refresh()
     root.mainloop()

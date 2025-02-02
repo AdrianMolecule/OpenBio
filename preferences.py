@@ -198,7 +198,7 @@ class Preferences:
                 raise ValueError("Invalid boolean value")
         # 
         p:dict[str,Preference] = {
-            "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/porkcomplete.embl", str,"Path to the default file"),
+            "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/samples/porkcomplete.gb", str,"Path to the default file"),
             "canvasLeftPadding":   Preference("canvasLeftPadding", int,  0, int,"Horizontal margin for the canvas"),
             "fontName":                 Preference("fontName", str, "Arial",  str,"Font type for the canvas"),
             "fontSize":                 Preference("fontSize", int, 10, int,"Font type for the canvas"),
@@ -219,6 +219,7 @@ class Preferences:
             "hydrogenLinesLength":      Preference("hydrogenLinesLength", int, 4, int, "the length of hydrogen links in pixels"),
             "ruler":                    Preference("ruler", bool, True, convertToBool, " draws coordinates for elements"),
             "leftButtonsWidth":         Preference("leftButtonsWidth", int, 16, int, " width on show info butttons on the left"),
+            "format":                   Preference( "format", str, "GenBank,genbank,gb",  str,"specify the format as format description, precise format name, format extension. Need to be precise, no spaces"),
         }
         return p
 

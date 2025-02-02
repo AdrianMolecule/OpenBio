@@ -48,6 +48,8 @@ def drawCanvas( )->int:
 #draw features from original or cached features
 def drawFeatures( mySequenceRecord: MySeqRecord, yStart: int, font: tuple[str, int], bgColor):
 	for feature in mySequenceRecord.features:
+		if feature.type=="source":
+			continue
 		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
 			if gl.shrink:
@@ -259,29 +261,36 @@ def printCanvas():
 	else:
 		print("Canvas has no scrollable content.")
 
-
-# the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
-def loadFile(default=False)->tuple[list[MySeqRecord],str]:	
+def saveModel():	
 	currentDir=str(Path(__file__).resolve().parent)
-	if default:
-		filePath=currentDir+"/samples/"+gl.prefs.getPreferenceValue("defaultTestFileValue")
-	else:
-		if not gl.debug:
-			filePath = filedialog.askopenfilename(title="Open EMBL File",filetypes=[("EMBL Files", "*.embl"), ("All Files", "*.*")])  
-		else:
-			filePath = filedialog.askopenfilename(title="Open EMBL File",  initialdir=currentDir+"/samples/",filetypes=[("EMBL Files", "*.embl"),("All Files", "*.*")])    
-	secRecList:list[MySeqRecord]		=None
+	format:list=gl.prefs.getPreferenceValue(preference_name="format")
+	formatPrompt=format.split(",")[0]
+	formatExtension=format.split(",")[2]
+	filePath = filedialog.asksaveasfilename(defaultextension="."+formatExtension,  
+			filetypes=[(formatPrompt, "*."+format), (formatPrompt, "*."+formatExtension), ("All files", "*.*")], title="Save in "+formatPrompt+" file format")
 	if filePath:
-		try:
-			secRecList=loadAndSeparateEmblSequences(filePath)
-		except Exception as e:
-			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
+		if not filePath.endswith("."+formatExtension):
+			filePath += "."+formatExtension
+		saveAsFormat( filePath)
+		messagebox.showinfo("Success", f"Sequence exported as {filePath}")
 	else:
-			messagebox.showwarning("No file", "Please select a file")
-	return secRecList, filePath
+		messagebox.showwarning("Warning", "No file name was provided!")		
+		try:
+			secRecList=loadAndSeparateSequences(filePath)
+		except Exception as e:
+			messagebox.showerror("Error", f"An error occurred while writing the file: {e}")
 
-def loadModel(default:False, append=False):	
-	seqRecList, filePath= loadFile(default )
+def saveAsFormat(filename):
+	formatName=gl.prefs.getPreferenceValue(preference_name="format").split(",")[1]
+	if formatName !="genbank" and formatName !="embl":
+		messagebox.showerror("Unrecognized format", f"Format names can be either genbank or embl. Please change preferences") 
+		return 				
+	record=Model.modelInstance.sequenceRecordList[0]
+	with open(filename, 'w') as file:
+		SeqIO.write(record, file, formatName)
+
+def loadModel(filePath=None, append=False):	
+	seqRecList, filePath= loadFile(filePath )
 	if seqRecList is None or len(seqRecList)==0:
 		messagebox.showerror("No Sequences", f" Please select a file that has at least one sequence") 
 		return None	
@@ -297,17 +306,33 @@ def loadModel(default:False, append=False):
 # def drawCanvasCircle(canvas:Canvas):
 #         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
 
-def canvasZoom(zoomin):# 1 for  zoom In or bigger
-	if zoomin!=True and gl.prefs.getPreferenceValue("fontSize")>3: # ZOOM OUT no to negative font sizes
-		gl.prefs.setFontSize(gl.fontSize-1)    
-		refresh()
-	else:   	
-		gl.prefs.setFontSize(gl.fontSize+1 )          
-	refresh()
 
-def loadAndSeparateEmblSequences(emblName:str)->list[MySeqRecord]:
+# the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
+def loadFile(filePath=None)->tuple[list[MySeqRecord],str]:	
+	currentDir=str(Path(__file__).resolve().parent)
+	format:list=gl.prefs.getPreferenceValue(preference_name="format")
+	formatPrompt=format.split(",")[0]
+	formatName=format.split(",")[1]
+	formatExtension=format.split(",")[2]
+	if not filePath:
+		if not gl.debug:
+			filePath = filedialog.askopenfilename(title="Open "+formatPrompt,filetypes=[(formatPrompt, "*."+formatExtension), ("All Files", "*.*")])  
+		else:
+			filePath = filedialog.askopenfilename(title="Open "+formatPrompt, initialdir=currentDir+"/samples/", filetypes=[(formatPrompt, "*."+formatExtension), ("All Files", "*.*")])  
+	secRecList:list[MySeqRecord]		=None
+	if filePath:
+		try:
+			secRecList=loadAndSeparateSequences(filePath, formatName)
+		except Exception as e:
+			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
+	else:
+			messagebox.showwarning("No file", "Please select a file")
+	return secRecList, filePath
+
+
+def loadAndSeparateSequences(filePath:str, formatName:str)->list[MySeqRecord]:
 	#fIn=open(embl,'r')
-	sequenceRecordIterator=SeqIO.parse(emblName, "embl")
+	sequenceRecordIterator=SeqIO.parse(filePath, format=formatName)
 	sequenceRecordList:list[MySeqRecord]=[]
 	for record in sequenceRecordIterator:
 		if record.features==None:
@@ -328,15 +353,14 @@ def loadAndSeparateEmblSequences(emblName:str)->list[MySeqRecord]:
 			myRecord35.hybridizedToStrand=myRecord53
 	return 	sequenceRecordList 
 
-def loadFastas():
-	fName="short.fa" #sys.argv[1]
-	fIn=open(fName,'r')
-	sequenceRecordIterator=SeqIO.parse(fName, "fasta")
-	sequenceRecordList=[]
-	for record in sequenceRecordIterator:
-		print("Fasta record name:%s length:%i Sequence: %s" % (record.id, len(record), record.seq))
-		sequenceRecordList.append(record)
-	return 	sequenceRecordList
+
+def canvasZoom(zoomin):# 1 for  zoom In or bigger
+	if zoomin!=True and gl.prefs.getPreferenceValue("fontSize")>3: # ZOOM OUT no to negative font sizes
+		gl.prefs.setFontSize(gl.fontSize-1)    
+		refresh()
+	else:   	
+		gl.prefs.setFontSize(gl.fontSize+1 )          
+	refresh()
 
 def seqToString(seq:Seq)->str:
 	return seq._data.decode('ASCII') # from bytes to stringead and strip any extra whitespace or newline characters
@@ -404,14 +428,15 @@ def addPrimerHandler()->Seq:
 	if not newRecord.annotations.get("molecule_type")=="ss-DNA":
 		messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
 		return None
-	# add a feature spanning the full length of the primer
-	mandatoryFeatureText="None"
-	if newRecord.description !="":
-		mandatoryFeatureText=newRecord.description# this is what is shown
-	else:        
-		mandatoryFeatureText="AddedFeature"
-	mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=None), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
-	newRecord.features.append(mandatoryFeature)   
+	if not newRecord.features:
+		# add a feature spanning the full length of the primer
+		mandatoryFeatureText="None"
+		if newRecord.description !="":
+			mandatoryFeatureText=newRecord.description# this is what is shown
+		else:        
+			mandatoryFeatureText="AddedFeature"
+		mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=None), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
+		newRecord.features.append(mandatoryFeature)   
 	myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
 	leng=len(myRecord.seq) 
 	minLen=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
@@ -465,7 +490,7 @@ def anealPrimers( ):
 									can,where, perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) # we add because the tail of the 5to3 primer coincides with the tail of the strand overlap region
 									if can:
 										if not perfectMatch:
-											newPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(where[0], where[1]+1, strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": ["anealed"]})
+											newPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(where[0], where[1]+1, strand=None), type="anealed_sequence", id="elongated primer", qualifiers={"label": ["anealed"]})
 											sequenceRecordPrimer.features.append(newPrimerFeature)
 										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 										# change feature location
@@ -487,7 +512,7 @@ def anealPrimers( ):
 									can, where,perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) 
 									if can:
 										if not perfectMatch:
-											newPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(where[0], where[1]+1, strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": ["anealed"]})
+											newPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(where[0], where[1]+1, strand=None), type="anealed_sequence", id="elongated primer", qualifiers={"label": ["anealed"]})
 											sequenceRecordPrimer.features.append(newPrimerFeature)
 										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
@@ -530,11 +555,14 @@ def canElongate(largestOverlapsInPrimer, primerLen, fiveTo3Strand):# canElongate
 def toggleShrink( ):
 	p=gl.shrink
 	if p:
-		gl.prefs.setPreferenceValue("shrink", False)
+		gl.prefs.setPreferenceValue("shrink", value=False)
 	else:
 		gl.prefs.setPreferenceValue("shrink", True)
 	refresh()            
 			  
+def hairpins():
+	#http://rna.tbi.univie.ac.at//cgi-bin/RNAWebSuite/RNAfold.cgi
+	None        
 
 def elongate():
 	found:bool=False
@@ -548,26 +576,24 @@ def elongate():
 				#subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
 				subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
 																				   sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+
-				sequenceRecordPrimer.seq)
-				
-			seqRec=SeqRecord(subsequence, id=f"elongated {sequenceRecordPrimer.id}", name=f"from elongated primer {sequenceRecordPrimer.description}",
+				sequenceRecordPrimer.seq)				
+			newSeqRec=SeqRecord(subsequence, id=sequenceRecordPrimer.id, name=(f"from elongated primer {sequenceRecordPrimer.description}"), annotations=sequenceRecordPrimer.annotations,
 								 description=f" {sequenceRecordPrimer.description}")
-			newRec = MySeqRecord(seqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)
-			
+			newMySequenceRec = MySeqRecord(newSeqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)			
 			featureLabel=f"seed primer "+sequenceRecordPrimer.description
 			if sequenceRecordPrimer.fiveTo3:     
-				newRec.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
+				newMySequenceRec.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
 				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
 			else:
 				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters, sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
-				newRec.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters     
-			newRec.hybridizedToPrimer=False
-			newRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand
-			newRec.uniqueId=sequenceRecordPrimer.uniqueId    
-			newRec.features.insert(0,oldPrimerFeature)
+				newMySequenceRec.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters     
+			newMySequenceRec.hybridizedToPrimer=False
+			newMySequenceRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand	
+			newMySequenceRec.uniqueId=sequenceRecordPrimer.uniqueId    
+			newMySequenceRec.features.insert(0,oldPrimerFeature)
 			Model.modelInstance.sequenceRecordList.pop(i)
-			Model.modelInstance.sequenceRecordList.insert(i, newRec)
-			newRec.singleStranded=False
+			Model.modelInstance.sequenceRecordList.insert(i, newMySequenceRec)
+			newMySequenceRec.singleStranded=False
 			found=True
 	if not found:
 		messagebox.showerror("Not found", "No primer ready to elongate") 

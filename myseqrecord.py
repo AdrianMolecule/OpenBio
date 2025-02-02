@@ -41,13 +41,20 @@ class MySeqRecord(SeqRecord):
         if self.hybridizedToPrimer:
             collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
         collectDict['uniqueId'] =  str(self.uniqueId)
-        collectDict['annotations'] =  str(self.annotations)
         collectDict['seq'] = self.seq._data.decode('ASCII')
-        featuresString=""
+        featuresString="\n"
         for f in self.features:
-            featuresString+=str(f.location)+f.qualifiers.get("label")[0]
-            featuresString+="\n"
+            featuresString+=f.type+"   "
+            if f.qualifiers.get("label"):
+                featuresString+=str(f.location)+f.qualifiers.get("label")[0]
+                featuresString+="\n"
         collectDict['features'] = featuresString
+        annotationsString="\n"
+        #type id qualifier
+        for key, value in self.annotations.items():
+            annotationsString+=(f"{key}= {value}")        
+            annotationsString+="\n"
+        collectDict['annotations'] = annotationsString        
         collectDict['dbxrefs'] =  str(self.dbxrefs)
         s=""
         for key in collectDict:
@@ -58,10 +65,5 @@ class MySeqRecord(SeqRecord):
         # Customize the representation of the item
         return "id"+str(self.id)+" description:"+self.description+" SingleStranded:"+str(self.singleStranded)+" primer:"+str(self.isPrimer)+" 5To3:"+str(self.fiveTo3) +" primer:"+str(self.isPrimer)+" Sequence:"+str( self.seq)[:70]
 
-    def displayInfo(self):
-        print(f"ID: {self.id}")
-        print(f"Description: {self.description}")
-        print(f"Sequence: {self.seq}")
-        print(f"Extra Info: {self.extra_info}")
 
         

@@ -586,8 +586,7 @@ def elongate():
 			else:
 				#subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
 				subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
-																				   sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+
-				sequenceRecordPrimer.seq)				
+								sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+sequenceRecordPrimer.seq)				
 			newSeqRec=SeqRecord(subsequence, id=sequenceRecordPrimer.id, name=(f"from elongated primer {sequenceRecordPrimer.description}"), annotations=sequenceRecordPrimer.annotations,
 								 description=f" {sequenceRecordPrimer.description}")
 			newMySequenceRec = MySeqRecord(newSeqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)			
@@ -601,8 +600,9 @@ def elongate():
 			newMySequenceRec.hybridizedToPrimer=False
 			newMySequenceRec.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand	
 			newMySequenceRec.uniqueId=sequenceRecordPrimer.uniqueId    
+			newMySequenceRec.setNotAnealedLocation(sequenceRecordPrimer.notAnealedLocation)    
 			newMySequenceRec.features.insert(0,oldPrimerFeature)
-			Model.modelInstance.sequenceRecordList.pop(i)
+			Model.modelInstance.sequenceRecordList.pop(i)# remove the primer to replace it with elongated sequence
 			Model.modelInstance.sequenceRecordList.insert(i, newMySequenceRec)
 			newMySequenceRec.singleStranded=False
 			found=True

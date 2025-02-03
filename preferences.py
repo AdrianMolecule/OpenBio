@@ -216,7 +216,7 @@ class Preferences:
             "minPrimerOverlapLength":   Preference( "minPrimerOverlapLength", int, 18,  int,"minimal length for a primer"),
             "maxPrimerLength":          Preference( "maxPrimerLength", int, 50,  int,"maximal length for a primer"),
             "hydrogen":                 Preference("hydrogen", bool, True, convertToBool, "adds hydrogen links"),
-            "hydrogenLinesLength":      Preference("hydrogenLinesLength", int, 4, int, "the length of hydrogen links in pixels"),
+            "hydrogenLinesLength":      Preference("hydrogenLinesLength", int, 5, int, "the length of hydrogen links in pixels"),
             "ruler":                    Preference("ruler", bool, True, convertToBool, " draws coordinates for elements"),
             "leftButtonsWidth":         Preference("leftButtonsWidth", int, 16, int, " width on show info butttons on the left"),
             "format":                   Preference( "format", str, "GenBank,genbank,gb",  str,"specify the format as format description, precise format name, format extension. Need to be precise, no spaces"),
@@ -235,7 +235,7 @@ class Preferences:
         gl.rotated=gl.prefs.getPreferenceValue(preference_name="rotated")
         gl.verticalSequenceSpacing=gl.prefs.getPreferenceValue(preference_name="verticalSequenceSpacing")
         gl.hydrogen=gl.prefs.getPreferenceValue(preference_name="hydrogen")
-        gl.hydrogenLinesLength=gl.prefs.getPreferenceValue(preference_name="hydrogenLinesLength")
+        gl.hydrogenLinesHalfLength=gl.prefs.getPreferenceValue(preference_name="hydrogenLinesLength")
         gl.ruler=gl.prefs.getPreferenceValue(preference_name="ruler")
         gl.leftButtonsWidth=gl.prefs.getPreferenceValue(preference_name="leftButtonsWidth")
 

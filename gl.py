@@ -24,5 +24,5 @@ coloredBases:bool=None
 rotated:bool=None
 verticalSequenceSpacing:int=None
 hydrogen:bool=None
-hydrogenLinesLength:bool=None
+hydrogenLinesHalfLength:int=None
 leftButtonsWidth=None

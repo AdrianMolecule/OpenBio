@@ -64,29 +64,31 @@ def drawFeatures( mySequenceRecord: MySeqRecord, yStart: int, font: tuple[str, i
 					   gl.baseRectangleSymbolXPixelSize, gl.baseRectangleSymbolYPixelSize, 
 					bgColor, loc.end - loc.start, font)
 
-def drawPrimer(mySequenceRecordPrimer:MySeqRecord, yStart:int)->int:	
+def drawPrimer(myRecordPrimer:MySeqRecord, yStart:int)->int:	
 	font:tuple[str,int]=(gl.fontName,gl.fontSize)
 	verticalSequenceSpacing:int=gl.verticalSequenceSpacing+5 # blank space between 2 sequences Adrian
-	upsideDownLetter:bool=not mySequenceRecordPrimer.fiveTo3 and gl.rotated
-	dnaSequenceStr=seqToString(mySequenceRecordPrimer.seq)	
-	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecordPrimer,  yStart)		
+	upsideDownLetter:bool=not myRecordPrimer.fiveTo3 and gl.rotated
+	dnaSequenceStr=seqToString(myRecordPrimer.seq)	
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( myRecordPrimer,  yStart)		
 	i=0
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]		
-		if gl.shrink and mySequenceRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
-			xLett=gl.canvasLeftPadding + (mySequenceRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecordPrimer.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize
+		if gl.shrink and myRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
+			xLett=gl.canvasLeftPadding + (myRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[myRecordPrimer.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize
 		else:
-			xLett=gl.canvasLeftPadding + (mySequenceRecordPrimer.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize
+			xLett=gl.canvasLeftPadding + (myRecordPrimer.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize
 		color="white" if not gl.coloredBases else gl.prefs.getPreferenceValue(letter)
-		drawBase(letter, xLett, sequenceYStart,  color=color, font=font, upsideDownLetter=upsideDownLetter,fiveTo3=mySequenceRecordPrimer.fiveTo3)
-	drawFeatures( mySequenceRecordPrimer, featureYStart,  font, 'pink')
+		drawBase(letter, xLett, sequenceYStart,  color=color, font=font, notAnealedLocation=myRecordPrimer.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter,fiveTo3=myRecordPrimer.fiveTo3)
+	drawFeatures( myRecordPrimer, featureYStart,  font, 'pink')
 	if gl.shrink:
-		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i+mySequenceRecordPrimer.xStartOffsetAsLetters])*gl.baseRectangleSymbolXPixelSize)
+		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i+myRecordPrimer.xStartOffsetAsLetters])*gl.baseRectangleSymbolXPixelSize)
 	else:	
 		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i])*gl.baseRectangleSymbolXPixelSize)
 		
 	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(mySequenceRecordPrimer.description[:8], 1, yStart,mySequenceRecordPrimer,  labelHeightPx=bandYEnd-yStart)	
+	eb:EnhancedButton=EnhancedButton(myRecordPrimer.description[:8], 1, yStart,myRecordPrimer,  labelHeightPx=bandYEnd-yStart)	
+	if  gl.hydrogen : 
+		bandYEnd+=2*gl.hydrogenLinesHalfLength# add a gap to draw the hydrogen bond lines		
 	return  maxX,bandYEnd
 
 
@@ -110,14 +112,14 @@ def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 				color="grey"
 				spamCount+=1
 			if spamCount<=3:# keep 3 letters
-				drawBase(letter,  xLett, sequenceYStart, color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
+				drawBase(letter,  xLett, sequenceYStart, color=color, font=font,notAnealedLocation=mySequenceRecord.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
 		else: # NO SHRINK
 			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize	
 			if not gl.coloredBases:
 				color="white"
 			else:
 				color =gl.prefs.getPreferenceValue(letter)
-			drawBase(letter,  xLett, sequenceYStart, color=color, font=font, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
+			drawBase(letter,  xLett, sequenceYStart, color=color, font=font, notAnealedLocation=mySequenceRecord.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
 
 	# Replace the placeholder with the call to the new method
 	drawFeatures(mySequenceRecord, featureYStart,  font,  "white")
@@ -126,7 +128,7 @@ def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 	eb:EnhancedButton=EnhancedButton( mySequenceRecord.description[:8], 1, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
 	if mySequenceRecord.fiveTo3:
 		if  gl.hydrogen : 
-			bandYEnd+=gl.hydrogenLinesLength# add a gap to draw the hydrogen bond lines	
+			bandYEnd+=2*gl.hydrogenLinesHalfLength# add a gap to draw the hydrogen bond lines	
 	return  xLett+gl.baseRectangleSymbolXPixelSize,bandYEnd
 
 #calculate the yop relative Ys for features and primers and the final y
@@ -162,24 +164,29 @@ def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolX
 	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
 	
 # Define functions to draw each DNA base x,y relative from upper 	left corner
-def drawBase(base:str, x, y, color, font, upsideDownLetter=None, fiveTo3=None):
+def drawBase(base:str, x, y, color, font, notAnealedLocation:tuple[int,int]=None, letterIndex:int=0,upsideDownLetter=None, fiveTo3=None):
 	gl.canvas.create_rectangle( x, y, x + gl.baseRectangleSymbolXPixelSize ,y + gl.baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	if upsideDownLetter:
 		textId=gl.canvas.create_text(x+gl.baseRectangleSymbolXPixelSize/2, y+gl.baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)			
 	else:
 		textId=gl.canvas.create_text(x+gl.baseRectangleSymbolXPixelSize/2, y+gl.baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
-	if fiveTo3 and gl.hydrogen:
-		drawHydrogenBondLines( base, x+1,y + gl.baseRectangleSymbolYPixelSize+1)
+	if gl.hydrogen and (notAnealedLocation==None or (notAnealedLocation[0]<=letterIndex<notAnealedLocation[1])):
+		drawHydrogenBondLines( base, x+1,y + gl.baseRectangleSymbolYPixelSize+1, fiveTo3, color)
 
 	gl.canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, gl.canvas, None))
 
-def drawHydrogenBondLines( base:str, x: int, topY: int)->int:#y is always top
-	lineLength = gl.hydrogenLinesLength-1  # Length of each vertical line
+def drawHydrogenBondLines( base:str, x: int, topY: int, fiveTo3, color)->int:#y is always top
+	lineHalfLength = gl.hydrogenLinesHalfLength-1  # Length of each vertical line
 	lineSpacing = 2  # Spacing between the lines
-	for i in range(3 if base=="C" or base=="G" else 2):
-		gl.canvas.create_line(x+3, topY, x+3, topY + lineLength, fill="white")
-		x += lineSpacing	
-	return lineLength
+	if fiveTo3:
+		for i in range(3 if base=="C" or base=="G" else 2):
+			gl.canvas.create_line(x+3, topY, x+3, topY + lineHalfLength, fill="black") #color
+			x += lineSpacing	
+	else:
+		for i in range(3 if base=="C" or base=="G" else 2):
+			gl.canvas.create_line(x+3, topY-gl.baseRectangleSymbolYPixelSize-2, x+3, topY-gl.baseRectangleSymbolYPixelSize -2- lineHalfLength-1, fill="black")
+			x += lineSpacing			
+	return lineHalfLength
 
 # # Define functions to draw each DNA base x,y relative from upper left corner
 # def drawTextInRectangleWithoutWidgets(base:str,canvas:Canvas, x, y, baseRectangleSymbolXPixelSize, baseRectangleSymbolYPixelSize, col, font, length,rotated=None):
@@ -490,9 +497,11 @@ def anealPrimers( ):
 									can,where, perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) # we add because the tail of the 5to3 primer coincides with the tail of the strand overlap region
 									if can:
 										if not perfectMatch:
-											newPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(where[0], where[1]+1, strand=None), type="anealed_sequence", id="elongated primer", qualifiers={"label": ["anealed"]})
-											sequenceRecordPrimer.features.append(newPrimerFeature)
+											sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
 										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
+										if not perfectMatch:
+											delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
+											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))
 										# change feature location
 										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
@@ -512,9 +521,11 @@ def anealPrimers( ):
 									can, where,perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) 
 									if can:
 										if not perfectMatch:
-											newPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(where[0], where[1]+1, strand=None), type="anealed_sequence", id="elongated primer", qualifiers={"label": ["anealed"]})
-											sequenceRecordPrimer.features.append(newPrimerFeature)
+											sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
 										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
+										if not perfectMatch:
+											delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
+											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))
 										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
 										primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)

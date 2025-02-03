@@ -281,16 +281,16 @@ def saveModel():
 	if filePath:
 		if not filePath.endswith("."+formatExtension):
 			filePath += "."+formatExtension
-			formatName=gl.prefs.getPreferenceValue(preference_name="format").split(",")[1]
-			if formatName !="genbank" and formatName !="embl":
-				messagebox.showerror("Unrecognized format", f"Format names can be either genbank or embl. Please change preferences") 
-				return 				
-			record=Model.modelInstance.sequenceRecordList[0]
-			try:
-				with open(filePath, 'w') as file:
-					SeqIO.write(record, file, formatName)
-			except Exception as e:
-				messagebox.showerror("Error", f"An error occurred while writing the file: {e}")	
+		formatName=gl.prefs.getPreferenceValue(preference_name="format").split(",")[1]
+		if formatName !="genbank" and formatName !="embl":
+			messagebox.showerror("Unrecognized format", f"Format names can be either genbank or embl. Please change preferences") 
+			return 				
+		record=Model.modelInstance.sequenceRecordList[0]
+		try:
+			with open(filePath, 'w') as file:
+				SeqIO.write(record, file, formatName)
+		except Exception as e:
+			messagebox.showerror("Error", f"An error occurred while writing the file: {e}")	
 		messagebox.showinfo("Success", f"Sequence exported as {filePath}")
 	else:
 		messagebox.showwarning("Warning", "No file name was provided!")		

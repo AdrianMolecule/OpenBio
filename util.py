@@ -18,6 +18,7 @@ from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPo
 import gl
 from model import Model
 from enhancedbutton import EnhancedButton
+import myseqrecord
 from primers import PrimerUtils
 from preferences import Preferences
 
@@ -48,7 +49,7 @@ def drawCanvas( )->int:
 #draw features from original or cached features
 def drawFeatures( mySequenceRecord: MySeqRecord, yStart: int, font: tuple[str, int], bgColor):
 	for feature in mySequenceRecord.features:
-		if feature.type=="source":
+		if feature.type=="XXXX":
 			continue
 		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
@@ -222,7 +223,7 @@ def buildMask():# cell is True is visible
 					gl.mask[cell]=1
 		else:#strand
 			for feature in rec.features:
-				if feature.type=="source":
+				if rec.toIgnore(feature): # skip features that span the full sequence
 					continue
 				for cell in range(feature.location.start+rec.xStartOffsetAsLetters,feature.location.end+rec.xStartOffsetAsLetters):
 					gl.mask[cell]=1
@@ -284,10 +285,6 @@ def saveModel():
 		messagebox.showinfo("Success", f"Sequence exported as {filePath}")
 	else:
 		messagebox.showwarning("Warning", "No file name was provided!")		
-		try:
-			secRecList=loadAndSeparateSequences(filePath)
-		except Exception as e:
-			messagebox.showerror("Error", f"An error occurred while writing the file: {e}")
 
 def saveAsFormat(filename):
 	formatName=gl.prefs.getPreferenceValue(preference_name="format").split(",")[1]
@@ -295,26 +292,23 @@ def saveAsFormat(filename):
 		messagebox.showerror("Unrecognized format", f"Format names can be either genbank or embl. Please change preferences") 
 		return 				
 	record=Model.modelInstance.sequenceRecordList[0]
-	with open(filename, 'w') as file:
-		SeqIO.write(record, file, formatName)
+	try:
+		with open(filename, 'w') as file:
+			SeqIO.write(record, file, formatName)
+	except Exception as e:
+		messagebox.showerror("Error", f"An error occurred while writing the file: {e}")			
 
 def loadModel(filePath=None, append=False):	
 	seqRecList, filePath= loadFile(filePath )
 	if seqRecList is None or len(seqRecList)==0:
 		messagebox.showerror("No Sequences", f" Please select a file that has at least one sequence") 
-		return None	
+		raise FileNotFoundError("no model loaded")
 	if append and Model.modelInstance!=None:
 		for newRecord in seqRecList:
 			Model.modelInstance.sequenceRecordList.append(newRecord)
 	else:
 		newModel=Model(filePath,seqRecList)
 		Model.modelInstance=newModel
-	# Model.modelInstance.dumpModel("in main")
-	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
-
-# def drawCanvasCircle(canvas:Canvas):
-#         canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
-
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
 def loadFile(filePath=None)->tuple[list[MySeqRecord],str]:	
@@ -343,20 +337,25 @@ def loadAndSeparateSequences(filePath:str, formatName:str)->list[MySeqRecord]:
 	#fIn=open(embl,'r')
 	sequenceRecordIterator=SeqIO.parse(filePath, format=formatName)
 	sequenceRecordList:list[MySeqRecord]=[]
-	for record in sequenceRecordIterator:
-		if record.features==None:
-			record.features=list()
-		singleStranded=True if record.annotations.get("molecule_type")=="ss-DNA" else False
+	for mySecRecord in sequenceRecordIterator:
+		mySecRecord:MySeqRecord
+		if mySecRecord.features==None:
+			mySecRecord.features=list()
+		singleStranded=True if mySecRecord.annotations.get("molecule_type")=="ss-DNA" else False
 		if singleStranded:
-			myRecord=MySeqRecord(record,True, True, primer=False)
+			myRecord=MySeqRecord(mySecRecord,True, True, primer=False)
+			myRecord.removeFullSpanningFeatures()
 			myRecord.singleStranded=True
 			sequenceRecordList.append(myRecord)	
-		else:
-			myRecord53=MySeqRecord(record,False, True, primer=False)
+		else:# create 2 ss strands
+			myRecord53=MySeqRecord(mySecRecord,False, True, primer=False)
+			myRecord53.singleStranded=True
+			myRecord53.removeFullSpanningFeatures()
 			sequenceRecordList.append(myRecord53)
 			threeTo5Record=deepcopy(myRecord53)
 			threeTo5Record.seq=threeTo5Record.seq.complement()
 			myRecord35=MySeqRecord(threeTo5Record,False, False, primer=False)
+			myRecord35.removeFullSpanningFeatures()
 			sequenceRecordList.append(myRecord35)		
 			myRecord53.hybridizedToStrand=myRecord35
 			myRecord35.hybridizedToStrand=myRecord53
@@ -437,15 +436,14 @@ def addPrimerHandler()->Seq:
 	if not newRecord.annotations.get("molecule_type")=="ss-DNA":
 		messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
 		return None
-	if not newRecord.features or (len(newRecord.features)==1 and newRecord.features[0].type=="source"):
+	if not newRecord.features or (len(newRecord.features)==1 and newRecord.toIgnore(newRecord.features[0])):
 		# add a feature spanning the full length of the primer
 		mandatoryFeatureText="None"
 		if newRecord.description !="":
 			mandatoryFeatureText=newRecord.description# this is what is shown
 		else:        
 			mandatoryFeatureText="AddedFeature"
-		mandatoryFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(newRecord.seq), strand=None), type="primer", id="a primer", qualifiers={"label": [mandatoryFeatureText]  })
-		newRecord.features.append(mandatoryFeature)   
+		newRecord.addFeature(0, len(newRecord.seq), strand=None, type="primer", id="a primer", label=mandatoryFeatureText)	
 	myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
 	leng=len(myRecord.seq) 
 	minLen=gl.prefs.getPreferenceValue("minPrimerOverlapLength")

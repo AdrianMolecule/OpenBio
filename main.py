@@ -144,17 +144,23 @@ class UiApp:
         gl.prefs.openPreferencesPopup()       
 
     def loadSequencesHandler(self)->Seq:
-        loadModel(append=False)
-        self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        refresh()  
+        try:
+            loadModel(append=False)
+            self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+            refresh()  
+        except Exception as e:
+            print(f"{e}")            
 
     def saveSequencesHandler(self)->Seq:
         saveModel()
 
     def addSequencesHandler(self)->Seq:
-        loadModel( append=True)
-        self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        refresh()  
+        try:
+            loadModel(append=True)
+            self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+            refresh()  
+        except Exception as e:
+            print(f"{e}")             
 
     def canvasDrawCircle(self):
         self.canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -176,10 +182,16 @@ if __name__ == "__main__":
     app = UiApp(root)
     defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
     if defaultTestFileValue == "":
-        loadModel()
+        try:
+            loadModel()
+        except Exception as e:
+            print(f"{e}")             
     else:
         defaultTestFilePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
-        loadModel(filePath=defaultTestFilePath)
-    app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-    refresh()
+        try:
+            loadModel(filePath=defaultTestFilePath)
+            app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+            refresh()
+        except Exception as e:
+            print(f"{e}")         
     root.mainloop()

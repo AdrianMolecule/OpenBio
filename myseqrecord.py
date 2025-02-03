@@ -77,4 +77,18 @@ class MySeqRecord(SeqRecord):
 		return "id"+str(self.id)+" description:"+self.description+" SingleStranded:"+str(self.singleStranded)+" primer:"+str(self.isPrimer)+" 5To3:"+str(self.fiveTo3) +" primer:"+str(self.isPrimer)+" Sequence:"+str( self.seq)[:70]
 
 
+	def addFeature(self, start, end, strand:int, type, id, label:str):
+		newFeature:SeqFeature=SeqFeature(FeatureLocation(start, end, strand=None), type=type, id=id, qualifiers={"label": [label]  })
+		self.features.append(newFeature)   
 
+
+	def removeFullSpanningFeatures(self): # that is usually where type=="source"
+		for i, feature in enumerate(self.features):	
+			if self.toIgnore(feature):
+				self.features.pop(i)		
+
+
+	def toIgnore(self,feature:SeqFeature)->bool: # usually for record.type=="source"):
+		if feature.location.start==0 and feature.location.end==len(self):
+			return True
+		return False

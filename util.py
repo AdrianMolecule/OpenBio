@@ -10,15 +10,14 @@ from typing import no_type_check
 from PIL import ImageGrab
 #
 from Bio.SeqRecord import SeqRecord
-from myseqrecord import MySeqRecord
 from Bio.Seq import Seq
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
 # mine
 import gl
+from myseqrecord import MySeqRecord
 from model import Model
 from enhancedbutton import EnhancedButton
-import myseqrecord
 from primers import PrimerUtils
 from preferences import Preferences
 
@@ -281,37 +280,30 @@ def saveModel():
 	if filePath:
 		if not filePath.endswith("."+formatExtension):
 			filePath += "."+formatExtension
-		saveAsFormat( filePath)
+			formatName=gl.prefs.getPreferenceValue(preference_name="format").split(",")[1]
+			if formatName !="genbank" and formatName !="embl":
+				messagebox.showerror("Unrecognized format", f"Format names can be either genbank or embl. Please change preferences") 
+				return 				
+			record=Model.modelInstance.sequenceRecordList[0]
+			try:
+				with open(filePath, 'w') as file:
+					SeqIO.write(record, file, formatName)
+			except Exception as e:
+				messagebox.showerror("Error", f"An error occurred while writing the file: {e}")	
 		messagebox.showinfo("Success", f"Sequence exported as {filePath}")
 	else:
 		messagebox.showwarning("Warning", "No file name was provided!")		
-
-def saveAsFormat(filename):
-	formatName=gl.prefs.getPreferenceValue(preference_name="format").split(",")[1]
-	if formatName !="genbank" and formatName !="embl":
-		messagebox.showerror("Unrecognized format", f"Format names can be either genbank or embl. Please change preferences") 
-		return 				
-	record=Model.modelInstance.sequenceRecordList[0]
-	try:
-		with open(filename, 'w') as file:
-			SeqIO.write(record, file, formatName)
-	except Exception as e:
-		messagebox.showerror("Error", f"An error occurred while writing the file: {e}")			
-
-def loadModel(filePath=None, append=False):	
-	seqRecList, filePath= loadFile(filePath )
-	if seqRecList is None or len(seqRecList)==0:
-		messagebox.showerror("No Sequences", f" Please select a file that has at least one sequence") 
-		raise FileNotFoundError("no model loaded")
-	if append and Model.modelInstance!=None:
+		
+def updateModel(seqRecList, filePath=None):
+	if Model.modelInstance!=None:
 		for newRecord in seqRecList:
 			Model.modelInstance.sequenceRecordList.append(newRecord)
 	else:
 		newModel=Model(filePath,seqRecList)
-		Model.modelInstance=newModel
+		Model.modelInstance=newModel	
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
-def loadFile(filePath=None)->tuple[list[MySeqRecord],str]:	
+def loadSequencesFile(filePath=None)->tuple[list[MySeqRecord], str]:	
 	currentDir=str(Path(__file__).resolve().parent)
 	format:list=gl.prefs.getPreferenceValue(preference_name="format")
 	formatPrompt=format.split(",")[0]
@@ -321,38 +313,40 @@ def loadFile(filePath=None)->tuple[list[MySeqRecord],str]:
 		if not gl.debug:
 			filePath = filedialog.askopenfilename(title="Open "+formatPrompt,filetypes=[(formatPrompt, "*."+formatExtension), ("All Files", "*.*")])  
 		else:
-			filePath = filedialog.askopenfilename(title="Open "+formatPrompt, initialdir=currentDir+"/samples/", filetypes=[(formatPrompt, "*."+formatExtension), ("All Files", "*.*")])  
-	secRecList:list[MySeqRecord]		=None
+			filePath = filedialog.askopenfilename(title="Open "+formatPrompt, initialdir=currentDir+"/samples/", filetypes=[(formatPrompt, "*."+formatExtension), ("All Files", "*.*")])  	
+	seqRecList:list[MySeqRecord]=None			
 	if filePath:
 		try:
-			secRecList=loadAndSeparateSequences(filePath, formatName)
+			seqRecList=loadAndSeparateSequences(filePath, formatName)
 		except Exception as e:
 			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
 	else:
 			messagebox.showwarning("No file", "Please select a file")
-	return secRecList, filePath
+	if seqRecList is None or len(seqRecList)==0:
+		messagebox.showerror("No Sequences", f" Please select a file that has at least one sequence") 
+		# raise FileNotFoundError("no model loaded")
+	return seqRecList, filePath	
 
 
 def loadAndSeparateSequences(filePath:str, formatName:str)->list[MySeqRecord]:
-	#fIn=open(embl,'r')
 	sequenceRecordIterator=SeqIO.parse(filePath, format=formatName)
 	sequenceRecordList:list[MySeqRecord]=[]
-	for mySecRecord in sequenceRecordIterator:
-		mySecRecord:MySeqRecord
-		if mySecRecord.features==None:
-			mySecRecord.features=list()
-		singleStranded=True if mySecRecord.annotations.get("molecule_type")=="ss-DNA" else False
+	for mySeqRecord in sequenceRecordIterator:
+		mySeqRecord:MySeqRecord
+		if mySeqRecord.features==None:
+			mySeqRecord.features=list()
+		singleStranded=True if mySeqRecord.annotations.get("molecule_type")=="ss-DNA" else False
 		if singleStranded:
-			myRecord=MySeqRecord(mySecRecord,True, True, primer=False)
+			myRecord=MySeqRecord(mySeqRecord,True, True, primer=False)
 			myRecord.removeFullSpanningFeatures()
 			myRecord.singleStranded=True
 			sequenceRecordList.append(myRecord)	
 		else:# create 2 ss strands
-			myRecord53=MySeqRecord(mySecRecord,False, True, primer=False)
+			myRecord53=MySeqRecord(mySeqRecord,False, True, primer=False)
 			myRecord53.singleStranded=True
 			myRecord53.removeFullSpanningFeatures()
 			sequenceRecordList.append(myRecord53)
-			threeTo5Record=deepcopy(myRecord53)
+			threeTo5Record=deepcopy(myRecord53)	
 			threeTo5Record.seq=threeTo5Record.seq.complement()
 			myRecord35=MySeqRecord(threeTo5Record,False, False, primer=False)
 			myRecord35.removeFullSpanningFeatures()
@@ -425,26 +419,28 @@ def refresh():
 	gl.canvasLeft.delete("all")
 	drawCanvas()     
 
-def addPrimerHandler()->Seq:
-	seqRecList, filePath= loadFile()
+def addPrimer(filePath=None)->Seq:
+	seqRecList, filePath= loadSequencesFile(filePath)
 	if not seqRecList:
 		return
 	if len(seqRecList)>1:
 		messagebox.showerror("Too many sequences", f" A primer should contain ony one sequence and this one contains {len(seqRecList)}") 
 		return None
-	newRecord: MySeqRecord = seqRecList[0]
-	if not newRecord.annotations.get("molecule_type")=="ss-DNA":
+	newPrimerRecord:MySeqRecord=seqRecList[0]
+	newPrimerRecord.isPrimer=True
+	# newPrimerRecord.5to3 is unknown at this point because the primer is not anealed
+	if not newPrimerRecord.annotations.get("molecule_type")=="ss-DNA":
 		messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
 		return None
-	if not newRecord.features or (len(newRecord.features)==1 and newRecord.toIgnore(newRecord.features[0])):
+	if not newPrimerRecord.features or (len(newPrimerRecord.features)==1 and newPrimerRecord.toIgnore(newPrimerRecord.features[0])):
 		# add a feature spanning the full length of the primer
 		mandatoryFeatureText="None"
-		if newRecord.description !="":
-			mandatoryFeatureText=newRecord.description# this is what is shown
+		if newPrimerRecord.description !="":
+			mandatoryFeatureText=newPrimerRecord.description# this is what is shown
 		else:        
 			mandatoryFeatureText="AddedFeature"
-		newRecord.addFeature(0, len(newRecord.seq), strand=None, type="primer", id="a primer", label=mandatoryFeatureText)	
-	myRecord:MySeqRecord=MySeqRecord(newRecord, True,fiveTo3=True,primer=True)
+		newPrimerRecord.addFeature(0, len(newPrimerRecord.seq), strand=None, type="primer", id="a primer", label=mandatoryFeatureText)	
+	myRecord:MySeqRecord=MySeqRecord(newPrimerRecord, True,fiveTo3=True,primer=True)
 	leng=len(myRecord.seq) 
 	minLen=gl.prefs.getPreferenceValue("minPrimerOverlapLength")
 	maxLen=gl.prefs.getPreferenceValue("maxPrimerLength")
@@ -470,6 +466,7 @@ def denaturate( ):
 			sequenceRecord.hybridizedToStrand=False
 			sequenceRecord.hybridizedToPrimer=False
 			sequenceRecord.singleStranded=True
+			sequenceRecord.notAnealedLocation=None
 	refresh() 
 
 def anealPrimers( ):
@@ -587,7 +584,7 @@ def elongate():
 				#subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
 				subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
 								sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+sequenceRecordPrimer.seq)				
-			newSeqRec=SeqRecord(subsequence, id=sequenceRecordPrimer.id, name=(f"from elongated primer {sequenceRecordPrimer.description}"), annotations=sequenceRecordPrimer.annotations,
+			newSeqRec=SeqRecord(subsequence, id=sequenceRecordPrimer.id, name=(f"from_elongated_primer_{sequenceRecordPrimer.description}"), annotations=sequenceRecordPrimer.annotations,
 								 description=f" {sequenceRecordPrimer.description}")
 			newMySequenceRec = MySeqRecord(newSeqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)			
 			featureLabel=f"seed primer "+sequenceRecordPrimer.description

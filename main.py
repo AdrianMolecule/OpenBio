@@ -1,4 +1,5 @@
 import tkinter as tk
+from myseqrecord import MySeqRecord
 from util import *
 from gl import *
 from preferences import Preferences
@@ -65,7 +66,7 @@ class UiApp:
         addFileButton.grid(row=0, column=column, padx=3)
         column+=1     
         # add primer   
-        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimerHandler())
+        addPrimerButton=tk.Button(self.bottomButtonBar, text="Add Primer", command=lambda:addPrimer())
         addPrimerButton.grid(row=0, column=column, padx=3)
         column+=1  
         # Create zoom in button      
@@ -144,23 +145,26 @@ class UiApp:
         gl.prefs.openPreferencesPopup()       
 
     def loadSequencesHandler(self)->Seq:
-        try:
-            loadModel(append=False)
-            self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+        # try:
+            Model.modelInstance=None
+            seqRecList, filePath=loadSequencesFile()
+            updateModel(seqRecList, filePath)
+            # self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
             refresh()  
-        except Exception as e:
-            print(f"{e}")            
+        # except Exception as e:
+        #     print(f"{e}")            
 
     def saveSequencesHandler(self)->Seq:
         saveModel()
 
     def addSequencesHandler(self)->Seq:
-        try:
-            loadModel(append=True)
-            self.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+        # try:
+            seqRecList, filePath=loadSequencesFile()
+            updateModel(seqRecList, filePath=filePath)
+        
             refresh()  
-        except Exception as e:
-            print(f"{e}")             
+        # except Exception as e:
+        #     print(f"{e}")             
 
     def canvasDrawCircle(self):
         self.canvas.create_oval(100, 150, 200, 250, outline="blue", width=2)
@@ -182,16 +186,17 @@ if __name__ == "__main__":
     app = UiApp(root)
     defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
     if defaultTestFileValue == "":
-        try:
-            loadModel()
-        except Exception as e:
-            print(f"{e}")             
+        seqRecList, filePath=loadSequencesFile() 
+        updateModel(seqRecList, filePath=filePath)
+        app.root.title("OpenBio "+Model.modelInstance.loadedFileName)        
     else:
-        defaultTestFilePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
-        try:
-            loadModel(filePath=defaultTestFilePath)
-            app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-            refresh()
-        except Exception as e:
-            print(f"{e}")         
+        filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
+        seqRecList, filePath=loadSequencesFile(filePath=filePath)
+        updateModel(seqRecList, filePath=filePath)
+        app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+        addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+        denaturate()
+        anealPrimers()
+        elongate()
+        refresh() 
     root.mainloop()

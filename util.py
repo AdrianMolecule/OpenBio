@@ -221,7 +221,9 @@ def buildMask():# cell is True is visible
 				for cell in range(rec.xStartOffsetAsLetters,rec.xStartOffsetAsLetters+len(rec.seq)):
 					gl.mask[cell]=1
 		else:#strand
-			for feature in rec.features: # adrian todo make sure features extending outside the strand are not created
+			for feature in rec.features:
+				if feature.type=="source":
+					continue
 				for cell in range(feature.location.start+rec.xStartOffsetAsLetters,feature.location.end+rec.xStartOffsetAsLetters):
 					gl.mask[cell]=1
 	updateMaskSkipped()
@@ -435,7 +437,7 @@ def addPrimerHandler()->Seq:
 	if not newRecord.annotations.get("molecule_type")=="ss-DNA":
 		messagebox.showerror("Not a primer candidate", f" A primer should be single stranded but this record does not have molecule_type =ss-DNA") 
 		return None
-	if not newRecord.features:
+	if not newRecord.features or (len(newRecord.features)==1 and newRecord.features[0].type=="source"):
 		# add a feature spanning the full length of the primer
 		mandatoryFeatureText="None"
 		if newRecord.description !="":
@@ -501,7 +503,7 @@ def anealPrimers( ):
 										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 										if not perfectMatch:
 											delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))
+											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
 										# change feature location
 										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
@@ -525,7 +527,7 @@ def anealPrimers( ):
 										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 										if not perfectMatch:
 											delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))
+											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
 										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
 										primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)

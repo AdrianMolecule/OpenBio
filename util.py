@@ -12,6 +12,7 @@ from PIL import ImageGrab
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from Bio import SeqIO
+import time
 from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
 # mine
 import gl
@@ -545,6 +546,23 @@ def anealPrimers( ):
 		else:# found match but not added
 			messagebox.showinfo("No Anealing", f"Primers {names} CAN anneal to {len(found)} sequences but they were not placed on the corresponding strands since they cannot elongate") 
 
+
+def workflow():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	denaturate()
+	anealPrimers()
+	elongate()	
+	denaturate()
+	# time.sleep(.5) 
+	deleteSequence(uniqueId=0)
+	deleteSequence(1)
+
+
 #only if primer.start ==0 when strand is 5 to 3 or when primer.end==primerLen for 3 to 5 strands
 def canElongate(largestOverlapsInPrimer, primerLen, fiveTo3Strand):# canElongate, which primer overlap , isPerfectOverlap
 	#adrian todo this looks until it finds one
@@ -605,7 +623,20 @@ def elongate():
 			found=True
 	if not found:
 		messagebox.showerror("Not found", "No primer ready to elongate") 
-	refresh()            
+	refresh()   
+
+def deleteSequence(uniqueId:int):
+	for i,r in enumerate(Model.modelInstance.sequenceRecordList):
+		r:MySeqRecord
+		if r.uniqueId ==uniqueId:
+			Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
+			if r.hybridizedToPrimer:
+				r.hybridizedToPrimer.hybridizedToStrand=None
+			if r.hybridizedToStrand:
+				r.hybridizedToStrand.hybridizedToPrimer=None                
+			# print(f"the clicked sequence is found{r.uniqueId}")
+			refresh()
+			break
 			  
 def clickOnSeqRecordToDelete( event: tk.Event, mySeqRecord:MySeqRecord) -> None:
 	# Get the coordinates of the click
@@ -625,19 +656,8 @@ def clickOnSeqRecordToDelete( event: tk.Event, mySeqRecord:MySeqRecord) -> None:
 	else:
 			None
 			# print(f"Action 1 was not over a character")
-	for i,r in enumerate(Model.modelInstance.sequenceRecordList):
-		r:MySeqRecord
-		if r.uniqueId ==mySeqRecord.uniqueId:
-			Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
-			gl.canvasLeft.delete("all")
-			if r.hybridizedToPrimer:
-				r.hybridizedToPrimer.hybridizedToStrand=None
-			if r.hybridizedToStrand:
-				r.hybridizedToStrand.hybridizedToPrimer=None                
+	deleteSequence(mySeqRecord.uniqueId)
 
-			# print(f"the clicked sequence is found{r.uniqueId}")
-			refresh()
-			break
 
 def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
 	# Get the coordinates of the click

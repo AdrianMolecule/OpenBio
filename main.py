@@ -97,8 +97,8 @@ class UiApp:
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonXXX = tk.Button(self.bottomButtonBar, text="Button", command=None)
-        buttonXXX.grid(row=0, column=column, padx=20)   
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow", command=workflow)
+        buttonWorkflow.grid(row=0, column=column, padx=20)   
         # next row with buttons
         self.stepsButtonBar = tk.Frame(self.root)
         self.stepsButtonBar.grid(row=2, column=1, padx=5, pady=3, sticky=( "ew")) 

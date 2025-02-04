@@ -238,6 +238,7 @@ class Preferences:
         gl.hydrogenLinesHalfLength=gl.prefs.getPreferenceValue(preference_name="hydrogenLinesLength")
         gl.ruler=gl.prefs.getPreferenceValue(preference_name="ruler")
         gl.leftButtonsWidth=gl.prefs.getPreferenceValue(preference_name="leftButtonsWidth")
+        gl.minPrimerOverlapLength=gl.prefs.getPreferenceValue(preference_name="minPrimerOverlapLength")
 
     def dump(self):
         for key, p in self.preferences.items():

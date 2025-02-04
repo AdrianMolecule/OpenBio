@@ -1,10 +1,11 @@
 from Bio.Seq import MutableSeq, Seq
 from Bio.SeqRecord import SeqRecord
 from myseqrecord import MySeqRecord
+import gl
 
 class PrimerUtils:
     # return a list of tuples each containig a start and an end
-    def findPrimerOverlaps(targetDnaRecordSequence:Seq, primerRecordSequence:Seq, minOverlapLength):
+    def findPrimerOverlaps(targetDnaRecordSequence:Seq, primerRecordSequence:Seq):
         overlapStartsEnds = set()
         largestOverlaps = []
         largestLength = 0
@@ -14,8 +15,8 @@ class PrimerUtils:
         complementdPrimerString:str=seqToString(primerRecordSequence).lower()
         targetDnaRecordString: str =seqToString(targetDnaRecordSequence).lower()
 
-        for i in range(len(complementdPrimerString) - minOverlapLength + 1):
-            for j in range(i + minOverlapLength, len(complementdPrimerString) + 1):
+        for i in range(len(complementdPrimerString) - gl.minPrimerOverlapLength + 1):
+            for j in range(i + gl.minPrimerOverlapLength, len(complementdPrimerString) + 1):
                 subShort: str = complementdPrimerString[i:j]
                 index: int = targetDnaRecordString.find(subShort)
                 while index != -1:

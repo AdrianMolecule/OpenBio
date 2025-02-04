@@ -26,3 +26,4 @@ verticalSequenceSpacing:int=None
 hydrogen:bool=None
 hydrogenLinesHalfLength:int=None
 leftButtonsWidth=None
+minPrimerOverlapLength=None

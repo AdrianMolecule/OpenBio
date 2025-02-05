@@ -88,7 +88,7 @@ class MySeqRecord(SeqRecord):
 				self.features.pop(i)		
 
 
-	def toIgnore(self,feature:SeqFeature)->bool: # usually for record.type=="source"):
+	def toIgnore(self,feature:SeqFeature)->bool: # usually for record.type=="source" that takes the full length of the sequence):
 		if feature.location.start==0 and feature.location.end==len(self):
 			return True
 		return False

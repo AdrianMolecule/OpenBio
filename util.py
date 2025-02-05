@@ -562,22 +562,12 @@ def workflow():
 	deleteSequence(1)
 	leftAlignSequence(3)
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
-	fullLenMaxIndex=len(Model.modelInstance.sequenceRecordList[0].seq)-1
 
 	Model.modelInstance.sequenceRecordList[0].features.clear()
 	
-	Model.modelInstance.sequenceRecordList[0].addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1],strand=None, type="", id="XXX",label="Str Overlap 0-23")
-	Model.modelInstance.sequenceRecordList[0].addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1],strand=None, type="", id="XXX",label="Str Overlap 80-103")
-	
-	Model.modelInstance.sequenceRecordList[0].addFeature( fullLenMaxIndex-largestOverlapsInPrimer[0][1],fullLenMaxIndex-largestOverlapsInPrimer[0][0],strand=None, type="", id="XXX",label="Prim Overlap 0-23")
-	Model.modelInstance.sequenceRecordList[0].addFeature( fullLenMaxIndex-largestOverlapsInPrimer[1][1],fullLenMaxIndex-largestOverlapsInPrimer[1][0],strand=None, type="", id="XXX",label="Prim Overlap 80-103")
-	# Model.modelInstance.sequenceRecordList[0].addFeature(81, 104,strand=None, type="", id="XXX",label="Overlap 80-103")
-	print(f"largestOverlapsInStrand {largestOverlapsInStrand[0]}  {largestOverlapsInStrand[1]}")
-	print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
-
-	print(f"1 st largestOverlapsInPrimer from the end {fullLenMaxIndex-largestOverlapsInPrimer[0][0]}  {fullLenMaxIndex-largestOverlapsInPrimer[0][1]}   ")
-	print(f"2 nd largestOverlapsInPrimer from the end {fullLenMaxIndex-largestOverlapsInPrimer[1][0]}  {fullLenMaxIndex-largestOverlapsInPrimer[1][1]}   ")
-
+	Model.modelInstance.sequenceRecordList[0].addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="", id="XXX",label=f"Str Overlap {largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
+	Model.modelInstance.sequenceRecordList[0].addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="", id="XXX",label=f"Str Overlap {largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
+	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
 	refresh()
 
 #only if primer.start ==0 when strand is 5 to 3 or when primer.end==primerLen for 3 to 5 strands

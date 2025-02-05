@@ -1,10 +1,13 @@
+from myseqrecord import MySeqRecord
+
+
 class Model:
     # Class attribute of type Model
     modelInstance: "Model" = None  # Initially set to None
 
     def __init__(self, loadedFileName:str,sequenceRecordList: list = []):
         # Instance attributes
-        self.sequenceRecordList: list = sequenceRecordList
+        self.sequenceRecordList: list[MySeqRecord] = sequenceRecordList
         self.loadedFileName: str = loadedFileName
         
     def dumpModel(self, optionalMessage=None) -> dict:

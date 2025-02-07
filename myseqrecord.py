@@ -102,14 +102,13 @@ class MySeqRecord(SeqRecord):
 		seqString=MySeqRecord.seqToString(self.seq)
 	
 		seqU:Seq=  Seq(seqString[splitPointIndex:])
-		seqL:Seq=  Seq(seqString[0:splitPointIndex][::-1])
+		seqL:Seq=  Seq(seqString[0:splitPointIndex])
 		newUpper=MySeqRecord(SeqRecord(seqU,id=self.id+"_t", name=self.name, description="truncated"+ self.description), singleStranded=True,fiveTo3=True,primer=False)
 		newUpperFeatures=self.shiftFeaturesLocs(splitPointIndex)
 		newUpper.features=newUpperFeatures
 		newUpper.xStartOffsetAsLetters=self.xStartOffsetAsLetters+splitPointIndex
-		newLower=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=False,primer=True)
-		newLowerFeatures=self.shiftBackwardsFeaturesLocs( splitPointIndex)
-		newLower.features=newLowerFeatures
+		newLower=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=True,primer=True)
+
 		newLower.xStartOffsetAsLetters=newUpper.xStartOffsetAsLetters+extraIndentForSecond
 		return newUpper, newLower
 	

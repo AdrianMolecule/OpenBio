@@ -468,7 +468,7 @@ def denaturate( ):
 			sequenceRecord.notAnealedLocation=None
 	refresh() 
 
-def anealPrimers( ):
+def anealPrimers(anealEvenIfWeCannotElongate:bool=False): # aneal only if the anealed primer can be elongated. This option is not good for determining loops as loops need to be shown even if there is no elongation possible
 	found:set= set()
 	added:bool=False
 	for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
@@ -489,22 +489,25 @@ def anealPrimers( ):
 						# 	return
 						if largestOverlapsInStrand and len (largestOverlapsInStrand)>=1:
 							if not added:
+								if not anealEvenIfWeCannotElongate :
 									can,where, perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) # we add because the tail of the 5to3 primer coincides with the tail of the strand overlap region
-									if can:
-										if not perfectMatch:
-											sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
-										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
-										if not perfectMatch:
-											delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
-										# change feature location
-										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
-										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
-										primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
-										primRec.fiveTo3=False
-										primRec.seq=Seq(MySeqRecord.seqToString(primRec.seq)[::-1])# reverses the string
-										Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
-										added=True
+								else:
+									where, perfectMatch=whereToElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer))
+								if anealEvenIfWeCannotElongate or can:
+									if not perfectMatch:
+										sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
+									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
+									if not perfectMatch:
+										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
+										strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
+									# change feature location
+									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
+									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
+									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+									primRec.fiveTo3=False
+									primRec.seq=Seq(MySeqRecord.seqToString(primRec.seq)[::-1])# reverses the string
+									Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
+									added=True
 							else:
 								messagebox.showwarning("Warning",f"multiple anealing sites\n{found}\nAnealing to the first target that can be elongated")														
 							found.add(( tuple(largestOverlapsInStrand), tuple(largestOverlapsInPrimer)))
@@ -513,20 +516,23 @@ def anealPrimers( ):
 						overlaps, largestOverlapsInStrand, largestOverlapsInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq)                      
 						if largestOverlapsInStrand and len (largestOverlapsInStrand)>=1:
 							if not added:
+								if not anealEvenIfWeCannotElongate :
 									can, where,perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) 
-									if can:
-										if not perfectMatch:
-											sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
-										sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
-										if not perfectMatch:
-											delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-											strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
-										sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
-										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
-										primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
-										primRec.fiveTo3=True
-										Model.modelInstance.sequenceRecordList.insert(s,primRec)    
-										added=True
+								else:
+									where, perfectMatch=whereToElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer))
+								if anealEvenIfWeCannotElongate or can:
+									if not perfectMatch:
+										sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
+									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
+									if not perfectMatch:
+										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
+										strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
+									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
+									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
+									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+									primRec.fiveTo3=True
+									Model.modelInstance.sequenceRecordList.insert(s,primRec)    
+									added=True
 							else:
 								messagebox.showwarning("Warning",f"multiple anealing sites\n{found}\n Anealing to first target that can elongate")
 							found.add(( tuple(largestOverlapsInStrand), tuple(largestOverlapsInPrimer)))
@@ -544,7 +550,7 @@ def anealPrimers( ):
 			messagebox.showinfo("No Anealing", f"Primers {names} CAN anneal to {len(found)} sequences but they were not placed on the corresponding strands since they cannot elongate") 
 
 
-def workflow():
+def workflow1():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
 	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
@@ -568,7 +574,18 @@ def workflow():
 	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
 	refresh()
 
-def workflowCont():
+def workflow():
+		None
+
+def workflowAneal():
+		anealPrimers(anealEvenIfWeCannotElongate=True)
+		
+def workflowAnealForLoopPrep():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/x.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)	
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
 	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
@@ -578,10 +595,22 @@ def workflowCont():
 	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
 	Model.modelInstance.sequenceRecordList.append(newUpperRec)
 	Model.modelInstance.sequenceRecordList.append(newLowerRec)
+	refresh()
+
+
+def workflowCont():
+	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
+	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
+	halfUpperLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
+	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
+	# i=findSequenceIndexInModel(myRec.uniqueId)
+	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
+	Model.modelInstance.sequenceRecordList.append(newUpperRec)
+	Model.modelInstance.sequenceRecordList.append(newLowerRec)
 
 	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
 	refresh()
-
 
 
 #only if primer.start ==0 when strand is 5 to 3 or when primer.end==primerLen for 3 to 5 strands
@@ -597,6 +626,15 @@ def canElongate(largestOverlapsInPrimer, primerLen, fiveTo3Strand):# canElongate
 			if largestOverlapsInPrimer[i][1]+1==primerLen:
 				return True, largestOverlapsInPrimer[i], False
 	return False, None, False
+
+
+def whereToElongate(largestOverlapsInPrimer, primerLen):#  which primer overlap , isPerfectOverlap
+	#adrian todo this looks until it finds one
+	for i in range(len(largestOverlapsInPrimer)):
+		if primerLen==largestOverlapsInPrimer[i][1]-largestOverlapsInPrimer[i][0]+1:#perfect overlap
+			return  None, True
+	else:
+			return largestOverlapsInPrimer[i], False
 
 
 def toggleShrink( ):
@@ -743,4 +781,7 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
 #             # print(f"the clicked sequence is found{r.uniqueId}")
 #             drawCanvas(canvas)
 #             break
-
+	# import traceback
+    # tb = traceback.extract_tb(e.__traceback__)
+    # for filename, line, func, text in tb:
+    #     print(f"Error in {func} at {filename}:{line} - {text}")

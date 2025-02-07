@@ -100,7 +100,11 @@ class UiApp:
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow COntinuation", command=workflowCont)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow Continuation", command=workflowCont)
+        buttonWorkflow.grid(row=0, column=column, padx=20)   
+        #
+        column+=1        
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow workflowAneal", command=workflowAneal)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         # next row with buttons
         self.stepsButtonBar = tk.Frame(self.root)
@@ -193,13 +197,14 @@ if __name__ == "__main__":
         updateModel(seqRecList, filePath=filePath)
         app.root.title("OpenBio "+Model.modelInstance.loadedFileName)        
     else:
-        filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
-        seqRecList, filePath=loadSequencesFile(filePath=filePath)
-        updateModel(seqRecList, filePath=filePath)
-        app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
-        denaturate()
-        anealPrimers()
-        elongate()
-        refresh() 
+        # filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
+        # seqRecList, filePath=loadSequencesFile(filePath=filePath)
+        # updateModel(seqRecList, filePath=filePath)
+        # app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+        # addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+        # denaturate()
+        # anealPrimers()
+        # elongate()
+        # refresh() 
+        workflowAnealForLoopPrep()
     root.mainloop()

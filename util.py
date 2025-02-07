@@ -562,8 +562,8 @@ def workflow():
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]
 	myRec.features.clear()	
-	myRec.addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="",id="overlapBegin",label=f"Str Overlap Beg{largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
-	myRec.addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="", id="overlapEnd",label=f"Str Overlap End {largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
+	myRec.addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="misc_feature",id=None,label=f"Str_Overlap_Beg{largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
+	myRec.addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="misc_feature", id=None,label=f"Str_Overlap_End{largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
 
 	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
 	refresh()
@@ -623,7 +623,7 @@ def elongate():
 				#subsequence: Seq = sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq)].complement()
 				subsequence: Seq = Seq(sequenceRecordPrimer.hybridizedToStrand.seq[:sequenceRecordPrimer.xStartOffsetAsLetters-
 								sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters].complement()+sequenceRecordPrimer.seq)				
-			newSeqRec=SeqRecord(subsequence, id=sequenceRecordPrimer.id, name=(f"from_elongated_primer_{sequenceRecordPrimer.description}"), annotations=sequenceRecordPrimer.annotations,
+			newSeqRec=SeqRecord(subsequence, id=sequenceRecordPrimer.id, name=sequenceRecordPrimer.name, annotations=sequenceRecordPrimer.annotations,
 								 description=f" {sequenceRecordPrimer.description}")
 			newMySequenceRec = MySeqRecord(newSeqRec, singleStranded=None,fiveTo3=sequenceRecordPrimer.fiveTo3,primer=False)			
 			featureLabel=f"seed primer "+sequenceRecordPrimer.description

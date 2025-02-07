@@ -1,5 +1,4 @@
 import tkinter as tk
-from myseqrecord import MySeqRecord
 from util import *
 from gl import *
 from preferences import Preferences
@@ -98,6 +97,10 @@ class UiApp:
         #
         column+=1        
         buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow", command=workflow)
+        buttonWorkflow.grid(row=0, column=column, padx=20)   
+        #
+        column+=1        
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow COntinuation", command=workflowCont)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         # next row with buttons
         self.stepsButtonBar = tk.Frame(self.root)

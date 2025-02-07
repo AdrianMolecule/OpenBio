@@ -207,7 +207,7 @@ class Preferences:
             "verticalSequenceSpacing":  Preference("verticalSequenceSpacing", int, 15,  int,"Vertical sequence spacing"),
             "coloredBases":             Preference("coloredBases", bool, True, convertToBool, "Enable or disable colored bases in the sequence"),
             "rotated":             Preference("rotated", bool, True, convertToBool, "Show complementary strand bases upside down"),
-            "shrink":             Preference("shrink", bool, True, convertToBool, "Shrinks the sequence and keeps features"),
+            "shrink":             Preference("shrink", bool, False, convertToBool, "Shrinks the sequence and keeps features"),
             "A":                        Preference( "A", str, "cyan",  str,"Color for Adenine (A)"),
             "T":                        Preference( "T", str, "gold2",  str,"Color for Thymine (T)"),
             "G":                        Preference( "G", str, "lime green", str,"Color for Guanine (G)"),

@@ -1,21 +1,22 @@
 from Bio.Seq import MutableSeq, Seq
 from Bio.SeqRecord import SeqRecord
+
+from util import *
 from myseqrecord import MySeqRecord
-import gl
 
 class PrimerUtils:
-    # return a list of tuples each containig a start and an end
-    def findPrimerOverlaps(targetDnaRecordSequence:Seq, primerRecordSequence:Seq):
+
+    def findPrimerOverlaps(targetDnaRecordSequence:Seq, primerRecordSequence:Seq, minOverlapLength):
         overlapStartsEnds = set()
         largestOverlaps = []
         largestLength = 0
-        largestOverlapsInShorts = []
+        largestOverlapInShorts = []
         # if targetDnaRecord.is
-        complementdPrimerString:str=MySeqRecord.seqToString(primerRecordSequence).lower()
-        targetDnaRecordString: str =MySeqRecord.seqToString(targetDnaRecordSequence).lower()
+        complementdPrimerString:str=seqToString(primerRecordSequence).lower()
+        targetDnaRecordString: str =seqToString(targetDnaRecordSequence).lower()
 
-        for i in range(len(complementdPrimerString) - gl.minPrimerOverlapLength + 1):
-            for j in range(i + gl.minPrimerOverlapLength, len(complementdPrimerString) + 1):
+        for i in range(len(complementdPrimerString) - minOverlapLength + 1):
+            for j in range(i + minOverlapLength, len(complementdPrimerString) + 1):
                 subShort: str = complementdPrimerString[i:j]
                 index: int = targetDnaRecordString.find(subShort)
                 while index != -1:
@@ -23,13 +24,13 @@ class PrimerUtils:
                     if len(subShort) > largestLength:
                         largestLength = len(subShort)
                         largestOverlaps: list[tuple[int, int]] = [(index, index + len(subShort) - 1)]
-                        largestOverlapsInShorts: list[tuple[int, int]] = [(i, j - 1)]
+                        largestOverlapInShorts: list[tuple[int, int]] = [(i, j - 1)]
                     elif len(subShort) == largestLength:
                         largestOverlaps.append((index, index + len(subShort) - 1))
-                        largestOverlapsInShorts.append((i, j - 1))
+                        largestOverlapInShorts.append((i, j - 1))
                     index = targetDnaRecordString.find(subShort, index + 1)
 
-        return list(overlapStartsEnds), largestOverlaps, largestOverlapsInShorts
+        return list(overlapStartsEnds), largestOverlaps, largestOverlapInShorts
 
 
 def main():
@@ -44,14 +45,11 @@ def main():
     print("primerSeq:", complementedPrimerSeq)
     print("Overlaps:", overlaps)
     print("largest:", largestInStrand)
-    from util import seqToString
     if largestInStrand:
         print("Largest Overlaps in targetDnaSequence:", largestInStrand, seqToString(targetDnaSequence)[largestInStrand[0][0]:largestInStrand[0][1]] )
         print("Largest Overlaps in primer:", largestInPrimer, seqToString(targetDnaSequence)[largestInPrimer[0][0]:largestInPrimer[0][1]] )
 
-
-# if __name__ == "__main__":
-#     main()
+main()
 
 
     

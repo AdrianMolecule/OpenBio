@@ -1,4 +1,5 @@
 from copy import deepcopy
+import math
 from multiprocessing import log_to_stderr
 from tkinter import Canvas, Button
 import tkinter as tk
@@ -69,7 +70,7 @@ def drawPrimer(myRecordPrimer:MySeqRecord, yStart:int)->int:
 	font:tuple[str,int]=(gl.fontName,gl.fontSize)
 	verticalSequenceSpacing:int=gl.verticalSequenceSpacing+5 # blank space between 2 sequences Adrian
 	upsideDownLetter:bool=not myRecordPrimer.fiveTo3 and gl.rotated
-	dnaSequenceStr=seqToString(myRecordPrimer.seq)	
+	dnaSequenceStr=MySeqRecord.seqToString(myRecordPrimer.seq)	
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( myRecordPrimer,  yStart)		
 	i=0
 	for i in range(len(dnaSequenceStr)):
@@ -98,7 +99,7 @@ def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 	# gl.prefs.dump()
 	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart)
 	seq:Seq=mySequenceRecord.seq
-	dnaSequenceStr=seqToString(seq)
+	dnaSequenceStr=MySeqRecord.seqToString(seq)
 	spamCount=0
 	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and gl.rotated
 	for i in range(len(dnaSequenceStr)):
@@ -365,9 +366,6 @@ def canvasZoom(zoomin):# 1 for  zoom In or bigger
 		gl.prefs.setFontSize(gl.fontSize+1 )          
 	refresh()
 
-def seqToString(seq:Seq)->str:
-	return seq._data.decode('ASCII') # from bytes to stringead and strip any extra whitespace or newline characters
-
 def printRed(message:str):
 	print('\033[1;31m' + message + '\033[0m') 
 
@@ -504,7 +502,7 @@ def anealPrimers( ):
 										strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
 										primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
 										primRec.fiveTo3=False
-										primRec.seq=Seq(seqToString(primRec.seq)[::-1])# reverses the string
+										primRec.seq=Seq(MySeqRecord.seqToString(primRec.seq)[::-1])# reverses the string
 										Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
 										added=True
 							else:
@@ -562,13 +560,29 @@ def workflow():
 	deleteSequence(1)
 	leftAlignSequence(3)
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
+	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]
+	myRec.features.clear()	
+	myRec.addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="",id="overlapBegin",label=f"Str Overlap Beg{largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
+	myRec.addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="", id="overlapEnd",label=f"Str Overlap End {largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
 
-	Model.modelInstance.sequenceRecordList[0].features.clear()
-	
-	Model.modelInstance.sequenceRecordList[0].addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="", id="XXX",label=f"Str Overlap {largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
-	Model.modelInstance.sequenceRecordList[0].addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="", id="XXX",label=f"Str Overlap {largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
 	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
 	refresh()
+
+def workflowCont():
+	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
+	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
+	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
+	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
+	# i=findSequenceIndexInModel(myRec.uniqueId)
+	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
+	Model.modelInstance.sequenceRecordList.append(newUpperRec)
+	Model.modelInstance.sequenceRecordList.append(newLowerRec)
+
+	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
+	refresh()
+
+
 
 #only if primer.start ==0 when strand is 5 to 3 or when primer.end==primerLen for 3 to 5 strands
 def canElongate(largestOverlapsInPrimer, primerLen, fiveTo3Strand):# canElongate, which primer overlap , isPerfectOverlap
@@ -644,6 +658,12 @@ def deleteSequence(uniqueId:int):
 			# print(f"the clicked sequence is found{r.uniqueId}")
 			refresh()
 			break
+
+def findSequenceIndexInModel(uniqueId:int):
+	for i,r in enumerate(Model.modelInstance.sequenceRecordList):
+		r:MySeqRecord
+		if r.uniqueId ==uniqueId:
+			return i
 
 def leftAlignSequence(uniqueId:int):
 	for i,r in enumerate(Model.modelInstance.sequenceRecordList):

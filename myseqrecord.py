@@ -34,18 +34,7 @@ class MySeqRecord(SeqRecord):
 		collectDict['id'] = str(self.id)
 		collectDict['name'] = str(self.name)
 		collectDict['description'] = self.description
-		
-		# collectDict additional attributes from MySeqRecord
-		collectDict['singleStranded'] = str(self.singleStranded)
-		collectDict['isPrimer'] =  str(self.isPrimer)
-		collectDict['fiveTo3'] =  str(self.fiveTo3)
-		collectDict['xStartOffsetAsLetters'] =  str(self.xStartOffsetAsLetters)
-		if self.hybridizedToStrand:
-			collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+"-"+str("5 to 3 " if self.fiveTo3 else "3 to 5")
-		if self.hybridizedToPrimer:
-			collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
-		collectDict['uniqueId'] =  str(self.uniqueId)
-		collectDict['notAnealedLocation'] =  str(self.notAnealedLocation)
+		collectDict['size'] = str(len(self.seq))
 		collectDict['seq'] = self.seq._data.decode('ASCII')
 		featuresString="\n"
 		for f in self.features:
@@ -61,9 +50,22 @@ class MySeqRecord(SeqRecord):
 			annotationsString+="\n"
 		collectDict['annotations'] = annotationsString        
 		collectDict['dbxrefs'] =  str(self.dbxrefs)
+		# collectDict additional attributes from MySeqRecord
+		collectDict['*******'] = "*************************************************************************************"
+		collectDict['singleStranded'] = str(self.singleStranded)
+		collectDict['isPrimer'] =  str(self.isPrimer)
+		collectDict['fiveTo3'] =  str(self.fiveTo3)
+		collectDict['xStartOffsetAsLetters'] =  str(self.xStartOffsetAsLetters)
+		if self.hybridizedToStrand:
+			collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+"-"+str("5 to 3 " if self.fiveTo3 else "3 to 5")
+		if self.hybridizedToPrimer:
+			collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
+		collectDict['uniqueId'] =  str(self.uniqueId)
+		collectDict['notAnealedLocation'] =  str(self.notAnealedLocation)
 		s=""
 		for key in collectDict:
 			s+=key+":"+collectDict[key]+"\n"
+		#
 		return s
 
 	def setNotAnealedLocation(self, startStop:tuple):
@@ -94,23 +96,28 @@ class MySeqRecord(SeqRecord):
 	def toIgnore(self,feature:SeqFeature)->bool: # usually for record.type=="source" that takes the full length of the sequence):
 		if feature.location.start==0 and feature.location.end==len(self):
 			return True
-			return False
+		return False
 
 	def splitRecord(self, splitPointIndex, extraIndentForSecond=0)->MyT:
 		if splitPointIndex>=len(self.seq):
 			return
 		seqString=MySeqRecord.seqToString(self.seq)
 	
-		seqU:Seq=  Seq(seqString[splitPointIndex:])
+		seqR:Seq=  Seq(seqString[splitPointIndex:])
 		seqL:Seq=  Seq(seqString[0:splitPointIndex])
 		newFeaturesBefore, newFeaturesAfter=self.shiftFeaturesLocs(splitPointIndex)
-		newUpper=MySeqRecord(SeqRecord(seqU,id=self.id+"_t", name=self.name, description="truncated"+ self.description), singleStranded=True,fiveTo3=True,primer=False)
-		newUpper.features=newFeaturesAfter
-		newUpper.xStartOffsetAsLetters=self.xStartOffsetAsLetters+splitPointIndex
-		newLower=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=True,primer=True)
-		newLower.features=newFeaturesBefore
-		newLower.xStartOffsetAsLetters=0#newUpper.xStartOffsetAsLetters+extraIndentForSecond is good too
-		return newUpper, newLower
+		newRightSideRec=MySeqRecord(SeqRecord(seqR,id=self.id+"_t", name=self.name, description="truncated"+ self.description), singleStranded=True,fiveTo3=True,primer=False)
+		newRightSideRec.features=newFeaturesAfter
+		newRightSideRec.xStartOffsetAsLetters=self.xStartOffsetAsLetters+splitPointIndex
+		newLeftSideRec=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=True,primer=True)
+		newLeftSideRec.features=newFeaturesBefore
+		newLeftSideRec.xStartOffsetAsLetters=0#newUpper.xStartOffsetAsLetters+extraIndentForSecond is good too
+		if splitPointIndex*2<len(self.seq): # I split on the left side of visually shown sequence
+			# leftSideDown=True
+			return newRightSideRec, newLeftSideRec
+		else:
+			return newLeftSideRec, newRightSideRec
+
 	
 		# for a in self.annotations:
 		# 	start=a.location.start
@@ -136,14 +143,14 @@ class MySeqRecord(SeqRecord):
 					l=SimpleLocation(f.location.start-byHowMuch,f.location.end-byHowMuch)
 				else:
 					l=SimpleLocation(byHowMuch,f.location.end-byHowMuch)
-				newFeature:SeqFeature=SeqFeature(l, type=f.type, id=f.id, qualifiers={"label": ["High "+f.qualifiers.get("label")[0]]  })
+				newFeature:SeqFeature=SeqFeature(l, type=f.type, id=f.id, qualifiers={"label": ["R "+f.qualifiers.get("label")[0]]  })
 				newFeaturesAfter.append(newFeature)
 			else:# left side of the chopped record that becomes the lower fragment	
 				if end <=byHowMuch:
 					l=SimpleLocation(start,end)
 				else:
 					l=SimpleLocation(start,byHowMuch)
-				newFeature:SeqFeature=SeqFeature(l, type=f.type, id=f.id, qualifiers={"label": ["Low "+f.qualifiers.get("label")[0]]  })
+				newFeature:SeqFeature=SeqFeature(l, type=f.type, id=f.id, qualifiers={"label": ["L "+f.qualifiers.get("label")[0]]  })
 				newFeaturesBefore.append(newFeature)					
 		return newFeaturesBefore, newFeaturesAfter
 	

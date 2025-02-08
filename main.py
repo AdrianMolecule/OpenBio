@@ -5,7 +5,7 @@ from preferences import Preferences
 
 class UiApp:
 
-    def __init__(self, root:tk):
+    def __init__(self:tk.Widget, root:tk):
         self.canvas=None
         self.root:tk = root
         self.root.title("OpenBio")
@@ -96,11 +96,15 @@ class UiApp:
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Right Loop Prep", command=loopPrep)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Test left Loop split", command=testLeftLoopSplit)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="temp left loop split", command=leftLoopSplit)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Test Right Loop Split", command=testRigthLoopSplit)
+        buttonWorkflow.grid(row=0, column=column, padx=20)   
+        #
+        column+=1        
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Test left Loop split", command=testLeftLoopSplit)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        

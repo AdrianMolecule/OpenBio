@@ -11,8 +11,8 @@ class PrimerUtils:
         largestLength = 0
         largestOverlapsInShorts = []
         # if targetDnaRecord.is
-        complementdPrimerString:str=MySeqRecord.seqToString(primerRecordSequence).lower()
         targetDnaRecordString: str =MySeqRecord.seqToString(targetDnaRecordSequence).lower()
+        complementdPrimerString:str=MySeqRecord.seqToString(primerRecordSequence).lower()
 
         for i in range(len(complementdPrimerString) - gl.minPrimerOverlapLength + 1):
             for j in range(i + gl.minPrimerOverlapLength, len(complementdPrimerString) + 1):

@@ -454,7 +454,10 @@ def addPrimer(filePath=None)->Seq:
 	myRecord.singleStranded=True
 	myRecord.fiveTo3=True
 	myRecord.hybridizedToStrand=None
-	Model.modelInstance.sequenceRecordList.append(myRecord)
+	if not Model.modelInstance:
+		updateModel(seqRecList, filePath=None)
+	else:
+		Model.modelInstance.sequenceRecordList.append(myRecord)
 	# Model.modelInstance.dumpModel("in main")
 	refresh() 
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
@@ -469,7 +472,7 @@ def denaturate( ):
 			sequenceRecord.notAnealedLocation=None
 	refresh() 
 
-def anealPrimers(anealEvenIfWeCannotElongate:bool=False): # aneal only if the anealed primer can be elongated. This option is not good for determining loops as loops need to be shown even if there is no elongation possible
+def anealPrimers(anealForLoops:bool=False): # aneal only if the anealed primer can be elongated. This option is not good for determining loops as loops need to be shown even if there is no elongation possible
 	found:set= set()
 	added:bool=False
 	for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
@@ -477,7 +480,7 @@ def anealPrimers(anealEvenIfWeCannotElongate:bool=False): # aneal only if the an
 		if sequenceRecordPrimer.isPrimer and not sequenceRecordPrimer.hybridizedToStrand :
 			complementedPrimerSeq:Seq=sequenceRecordPrimer.seq.complement()
 			complementedReversedPrimerSeq:Seq=sequenceRecordPrimer.seq.reverse_complement()
-			for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList):
+			for s, strandRegularRecord in enumerate(Model.modelInstance.sequenceRecordList[::-1]):
 				strandRegularRecord: MySeqRecord
 				# check is not blocked by another strand or the same primer
 				if not strandRegularRecord.hybridizedToStrand and not strandRegularRecord.isPrimer and (not strandRegularRecord.hybridizedToPrimer or
@@ -490,11 +493,11 @@ def anealPrimers(anealEvenIfWeCannotElongate:bool=False): # aneal only if the an
 						# 	return
 						if largestOverlapsInStrand and len (largestOverlapsInStrand)>=1:
 							if not added:
-								if not anealEvenIfWeCannotElongate :
+								if not anealForLoops :
 									can,where, perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) # we add because the tail of the 5to3 primer coincides with the tail of the strand overlap region
 								else:
 									where, perfectMatch=whereToElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer))
-								if anealEvenIfWeCannotElongate or can:
+								if anealForLoops or can:
 									if not perfectMatch:
 										sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
 									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
@@ -509,19 +512,22 @@ def anealPrimers(anealEvenIfWeCannotElongate:bool=False): # aneal only if the an
 									primRec.seq=Seq(MySeqRecord.seqToString(primRec.seq)[::-1])# reverses the string
 									Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
 									added=True
-							else:
-								messagebox.showwarning("Warning",f"multiple anealing sites\n{found}\nAnealing to the first target that can be elongated")														
-							found.add(( tuple(largestOverlapsInStrand), tuple(largestOverlapsInPrimer)))
+							else: # already added
+								if anealForLoops:
+									None
+								else:
+									messagebox.showwarning("Warning",f"multiple anealing sites\n{found}\nAnealing to the first target that can be elongated")														
+									found.add( tuple(largestOverlapsInStrand, largestOverlapsInPrimer))
 					else:  # strand is 3 to 5
 						# print("Testing 3to5",strandRegularRecord.seq)                 
 						overlaps, largestOverlapsInStrand, largestOverlapsInPrimer =PrimerUtils.findPrimerOverlaps(targetDnaRecordSequence=strandRegularRecord.seq, primerRecordSequence=complementedPrimerSeq)                      
 						if largestOverlapsInStrand and len (largestOverlapsInStrand)>=1:
 							if not added:
-								if not anealEvenIfWeCannotElongate :
+								if not anealForLoops :
 									can, where,perfectMatch= canElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer), fiveTo3Strand=strandRegularRecord.fiveTo3) 
 								else:
 									where, perfectMatch=whereToElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer))
-								if anealEvenIfWeCannotElongate or can:
+								if anealForLoops or can:
 									if not perfectMatch:
 										sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
 									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
@@ -534,9 +540,9 @@ def anealPrimers(anealEvenIfWeCannotElongate:bool=False): # aneal only if the an
 									primRec.fiveTo3=True
 									Model.modelInstance.sequenceRecordList.insert(s,primRec)    
 									added=True
-							else:
-								messagebox.showwarning("Warning",f"multiple anealing sites\n{found}\n Anealing to first target that can elongate")
-							found.add(( tuple(largestOverlapsInStrand), tuple(largestOverlapsInPrimer)))
+							else: # already added
+								messagebox.showwarning("Warning",f"multiple anealing sites\n{found}\n Anealead to first target that could elongate")
+								found.add(tuple(largestOverlapsInStrand, largestOverlapsInPrimer))
 	if added:
 		refresh()                                           
 	else:
@@ -580,58 +586,68 @@ def workflow():
 
 def hairpins():
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
+	if not largestOverlapsInStrand:
+		messagebox.showerror("No anealing", f"Cannot find hairpins") 
+		return
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	halfRightSideLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
 	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
-	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
+	newRightSideRec, newLeftSideRec=myRec.splitRecord(halfRightSideLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
 	# i=findSequenceIndexInModel(myRec.uniqueId)
-	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
-	Model.modelInstance.sequenceRecordList.append(newUpperRec)
-	Model.modelInstance.sequenceRecordList.append(newLowerRec)
-	# delete the original record from the model but leave it in the upper strand that loops
-	newUpperRec.preLoop=myRec
+	# Model.modelInstance.sequenceRecordList[i]=newRightSideRec
+	Model.modelInstance.sequenceRecordList.append(newRightSideRec)
+	Model.modelInstance.sequenceRecordList.append(newLeftSideRec)
+	# delete the original record from the model but leave it in the RightSide strand that loops
+	newRightSideRec.preLoop=myRec
 	deleteSequence(myRec.uniqueId)
-	anealPrimers(anealEvenIfWeCannotElongate=True)
+	anealPrimers(anealForLoops=True)
 	refresh()
 
 def loopAneal():
-	anealPrimers(anealEvenIfWeCannotElongate=True)
+	anealPrimers(anealForLoops=True)
 	refresh()
 		
-def leftLoopSplit():
+def testLeftLoopSplit():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/lefttofold.gb"
+	filePath=str(Path(__file__).resolve().parent)+"/samples/leftSplitTestCase.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)	
-
+	gl.prefs.setPreferenceValue("minPrimerOverlapLength",4)
+	Preferences.updateGlobalCache()
 	###############
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	halfRightSideLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
 	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
-	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
+	splitPointIndex=halfRightSideLoopSize+largestOverlapsInStrand[0][1]+1
+	newRightSideRec, newLeftSideRec=myRec.splitRecord(splitPointIndex=splitPointIndex,extraIndentForSecond=remainder )
 	# i=findSequenceIndexInModel(myRec.uniqueId)
 	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
-	Model.modelInstance.sequenceRecordList.append(newUpperRec)
-	Model.modelInstance.sequenceRecordList.append(newLowerRec)
+	Model.modelInstance.sequenceRecordList.append(newRightSideRec)
+	Model.modelInstance.sequenceRecordList.append(newLeftSideRec)
 	refresh()
 
 
-def loopPrep():
+def testRigthLoopSplit():# cccttttcgc tcaaaa
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/leftSplitTestCase.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)	
+	gl.prefs.setPreferenceValue("minPrimerOverlapLength",4)
+	Preferences.updateGlobalCache()
+	###############
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	halfRightSideLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
 	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
-	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
-	# i=findSequenceIndexInModel(myRec.uniqueId)
+	splitPointIndex=halfRightSideLoopSize+largestOverlapsInStrand[0][1]+1
+	newUpperSideRec, newLowerSideRec=myRec.splitRecord(splitPointIndex=splitPointIndex,extraIndentForSecond=remainder )
+	# i=findSequenceIndexInModel(myRec.uniqueId)	
 	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
-	Model.modelInstance.sequenceRecordList.append(newUpperRec)
-	Model.modelInstance.sequenceRecordList.append(newLowerRec)
-	# delete the original record from the model but leave it in the upper strand that loops
-	newUpperRec.preLoop=myRec
-	# deleteSequence(myRec.uniqueId)
-	# anealPrimers(anealEvenIfWeCannotElongate=True)
+	Model.modelInstance.sequenceRecordList.append(newUpperSideRec)
+	Model.modelInstance.sequenceRecordList.append(newLowerSideRec)
 	refresh()
 
 

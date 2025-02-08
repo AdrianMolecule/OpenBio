@@ -598,11 +598,10 @@ def loopAneal():
 	anealPrimers(anealEvenIfWeCannotElongate=True)
 	refresh()
 		
-def workflowAnealForLoopPrep():
-	messagebox("Not used")
+def leftLoopSplit():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/righttofold.gb"
+	filePath=str(Path(__file__).resolve().parent)+"/samples/lefttofold.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)	
 
@@ -620,22 +619,19 @@ def workflowAnealForLoopPrep():
 
 
 def loopPrep():
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/righttofold.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	updateModel(seqRecList, filePath=filePath)		
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	halfUpperLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
 	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
 	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
 	# i=findSequenceIndexInModel(myRec.uniqueId)
 	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
 	Model.modelInstance.sequenceRecordList.append(newUpperRec)
 	Model.modelInstance.sequenceRecordList.append(newLowerRec)
-
-	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
+	# delete the original record from the model but leave it in the upper strand that loops
+	newUpperRec.preLoop=myRec
+	# deleteSequence(myRec.uniqueId)
+	# anealPrimers(anealEvenIfWeCannotElongate=True)
 	refresh()
 
 

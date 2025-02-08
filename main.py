@@ -96,11 +96,11 @@ class UiApp:
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Loop Prep", command=loopPrep)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Right Loop Prep", command=loopPrep)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="XXX", command=loopPrep)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="temp left loop split", command=leftLoopSplit)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        
@@ -206,5 +206,6 @@ if __name__ == "__main__":
         # anealPrimers()
         # elongate()
         # refresh() 
-        loopPrep()
+        #loopPrep()
+        None
     root.mainloop()

@@ -98,7 +98,10 @@ class MySeqRecord(SeqRecord):
 			return True
 		return False
 
-	def splitRecord(self, splitPointIndex, extraIndentForSecond=0)->MyT:
+	def splitRecord(self, splitPointIndex)->MyT:
+		# splits the record at splitPointIndex in left part and right part. 
+		# calculates which one stays up and which one goes lower and becomes a primer
+		# returns the top one first
 		if splitPointIndex>=len(self.seq):
 			return
 		seqString=MySeqRecord.seqToString(self.seq)
@@ -109,13 +112,15 @@ class MySeqRecord(SeqRecord):
 		newRightSideRec=MySeqRecord(SeqRecord(seqR,id=self.id+"_t", name=self.name, description="truncated"+ self.description), singleStranded=True,fiveTo3=True,primer=False)
 		newRightSideRec.features=newFeaturesAfter
 		newRightSideRec.xStartOffsetAsLetters=self.xStartOffsetAsLetters+splitPointIndex
-		newLeftSideRec=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=True,primer=True)
+		newLeftSideRec=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=True,primer=False)
 		newLeftSideRec.features=newFeaturesBefore
 		newLeftSideRec.xStartOffsetAsLetters=0#newUpper.xStartOffsetAsLetters+extraIndentForSecond is good too
 		if splitPointIndex*2<len(self.seq): # I split on the left side of visually shown sequence
 			# leftSideDown=True
+			newLeftSideRec.isPrimer=True
 			return newRightSideRec, newLeftSideRec
 		else:
+			newRightSideRec.isPrimer=True
 			return newLeftSideRec, newRightSideRec
 
 	

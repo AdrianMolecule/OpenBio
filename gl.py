@@ -27,3 +27,7 @@ hydrogen:bool=None
 hydrogenLinesHalfLength:int=None
 leftButtonsWidth=None
 minPrimerOverlapLength=None
+a=None
+c=None
+g=None
+t=None

@@ -239,6 +239,10 @@ class Preferences:
         gl.ruler=gl.prefs.getPreferenceValue(preference_name="ruler")
         gl.leftButtonsWidth=gl.prefs.getPreferenceValue(preference_name="leftButtonsWidth")
         gl.minPrimerOverlapLength=gl.prefs.getPreferenceValue(preference_name="minPrimerOverlapLength")
+        gl.a=gl.prefs.getPreferenceValue(preference_name="A")
+        gl.c=gl.prefs.getPreferenceValue(preference_name="C")
+        gl.g=gl.prefs.getPreferenceValue(preference_name="G")
+        gl.t=gl.prefs.getPreferenceValue(preference_name="T")
 
     def dump(self):
         for key, p in self.preferences.items():

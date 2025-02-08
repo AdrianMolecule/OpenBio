@@ -34,7 +34,7 @@ class EnhancedButton:
             gl.canvasLeft.itemconfig(textDescription_id, fill="yellow")  # Change the text color to red
             current_text = event.widget.itemcget(textId, "text")            
             popupWindow = tk.Toplevel()
-            popupWindow.geometry("1200x450")
+            popupWindow.geometry("1200x490")
             popupWindow.title(f"Info on {self.mySeqRecord.description} sequence")                      
             # Display the text in the popup window
             textBox = tk.Text(popupWindow, wrap=tk.NONE, width=40, height=10)            

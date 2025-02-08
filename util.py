@@ -42,7 +42,7 @@ def drawCanvas( )->int:
 			sequenceWidth=newSequenceWidth
 		yPos=yFinal
 		sequenceIndex+=1
-	drawMask(yFinal)
+	drawRulerAndMask(yFinal)
 	# Adjust the scrollable region based on the length of the string
 	gl.canvas.config(scrollregion=(0, 0, sequenceWidth, yFinal+40))  # Set the scrollable area
 	return 2*gl.canvasLeftPadding+sequenceWidth
@@ -383,7 +383,7 @@ def getLabel (feature:SeqFeature):
 	return feature.qualifiers.get("label")
 
 
-def drawMask( yStart)->int:
+def drawRulerAndMask( yStart)->int:
 	font:tuple[str,int]=(gl.fontName,6)
 	x=gl.canvasLeftPadding
 	y=yStart	+gl.baseRectangleSymbolYPixelSize
@@ -393,8 +393,9 @@ def drawMask( yStart)->int:
 				sequenceRecord:MySeqRecord
 				if len(sequenceRecord.seq)+sequenceRecord.xStartOffsetAsLetters>maxLen:
 					maxLen=len(sequenceRecord.seq)+sequenceRecord.xStartOffsetAsLetters
-		for p in range(0,maxLen):
-			gl.canvas.create_line(x+gl.baseRectangleSymbolYPixelSize/2, y,x+gl.baseRectangleSymbolYPixelSize/2,y-(gl.baseRectangleSymbolYPixelSize), fill="black", width=1)
+		for p in range(0 if gl.debug else 1,maxLen if gl.debug else maxLen-1):
+			gl.canvas.create_line(x+gl.baseRectangleSymbolYPixelSize/2, y,x+gl.baseRectangleSymbolYPixelSize/2,y-(gl.baseRectangleSymbolYPixelSize), fill="grey", width=1)
+			# gl.canvas.create_line(x+gl.baseRectangleSymbolYPixelSize/2, y,x+gl.baseRectangleSymbolYPixelSize/2,0, fill="grey", width=1)
 			drawTextInRectangle( str(p),gl.canvas, x, y,
 						gl.baseRectangleSymbolXPixelSize , gl.baseRectangleSymbolYPixelSize , 
 							"white",1,font)	
@@ -575,17 +576,37 @@ def workflow1():
 	refresh()
 
 def workflow():
-		None
+	None
 
-def workflowAneal():
-		anealPrimers(anealEvenIfWeCannotElongate=True)
+def hairpins():
+	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
+	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
+	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
+	remainder=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]+1)%2
+	newUpperRec, newLowerRec=myRec.splitRecord(halfUpperLoopSize+largestOverlapsInStrand[0][1]+1,remainder )
+	# i=findSequenceIndexInModel(myRec.uniqueId)
+	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
+	Model.modelInstance.sequenceRecordList.append(newUpperRec)
+	Model.modelInstance.sequenceRecordList.append(newLowerRec)
+	# delete the original record from the model but leave it in the upper strand that loops
+	newUpperRec.preLoop=myRec
+	deleteSequence(myRec.uniqueId)
+	anealPrimers(anealEvenIfWeCannotElongate=True)
+	refresh()
+
+def loopAneal():
+	anealPrimers(anealEvenIfWeCannotElongate=True)
+	refresh()
 		
 def workflowAnealForLoopPrep():
+	messagebox("Not used")
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/x.gb"
+	filePath=str(Path(__file__).resolve().parent)+"/samples/righttofold.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)	
+
+	###############
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
 	halfUpperLoopSize=math.ceil((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
@@ -598,7 +619,12 @@ def workflowAnealForLoopPrep():
 	refresh()
 
 
-def workflowCont():
+def loopPrep():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/righttofold.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)		
 	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
 	halfUpperLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
@@ -645,7 +671,7 @@ def toggleShrink( ):
 		gl.prefs.setPreferenceValue("shrink", True)
 	refresh()            
 			  
-def hairpins():
+def xxx():
 	#http://rna.tbi.univie.ac.at//cgi-bin/RNAWebSuite/RNAfold.cgi
 	None        
 

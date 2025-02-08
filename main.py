@@ -96,15 +96,15 @@ class UiApp:
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow", command=workflow)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Loop Prep", command=loopPrep)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow Continuation", command=workflowCont)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="XXX", command=loopPrep)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         #
         column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Workflow workflowAneal", command=workflowAneal)
+        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Loop Aneal", command=loopAneal)
         buttonWorkflow.grid(row=0, column=column, padx=20)   
         # next row with buttons
         self.stepsButtonBar = tk.Frame(self.root)
@@ -123,7 +123,7 @@ class UiApp:
         buttonElongate.grid(row=0, column=column)   
         column+=1 
         #Hairpin
-        buttonHairpins = tk.Button(self.stepsButtonBar, text="Detect Hairpins", command=lambda:hairpins())
+        buttonHairpins = tk.Button(self.stepsButtonBar, text="Hairpins", command=lambda:hairpins())
         buttonHairpins.grid(row=0, column=column)   
 
 
@@ -206,5 +206,5 @@ if __name__ == "__main__":
         # anealPrimers()
         # elongate()
         # refresh() 
-        workflowAnealForLoopPrep()
+        loopPrep()
     root.mainloop()

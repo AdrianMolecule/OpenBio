@@ -526,7 +526,7 @@ def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed prim
 									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 									if not perfectMatch:
 										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-										strandRegularRecord.setNotAnnealedLocation((notAnnealedLoc[0]+delta, notAnnealedLoc[1]+1+delta))																				
+										strandRegularRecord.setNotAnnealedLocation((notAnnealedLoc[0]+delta, notAnnealedLoc[1]+delta))																				
 									# change feature location
 									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
@@ -559,7 +559,7 @@ def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed prim
 									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 									if not perfectMatch:
 										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-										strandRegularRecord.setNotAnnealedLocation((notAnnealedLoc[0]+delta, notAnnealedLoc[1]+1+delta))											
+										strandRegularRecord.setNotAnnealedLocation((notAnnealedLoc[0]+delta, notAnnealedLoc[1]+delta))	
 									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
 									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)	# todo understantd if popping messes up the list loop

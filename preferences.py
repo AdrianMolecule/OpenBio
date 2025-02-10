@@ -64,7 +64,7 @@ class Preferences:
                 # If the selected preference is a nucleotide color (A, T, C, G), directly open the color chooser
                 if selectedPref.name in ['A', 'T', 'C', 'G']: 
                     self.pickColor(selectedPref, listbox)
-                    self.updateGlobalCache()
+                    Preferences.updateGlobalCache()
                     self.updateCallback()   
                 else:
                     self.editNonColorPreference(selectedPref, listbox)

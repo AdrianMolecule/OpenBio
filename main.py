@@ -190,13 +190,13 @@ if __name__ == "__main__":
     else:
         filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
         seqRecList, filePath=loadSequencesFile(filePath=filePath)
-        updateModel(seqRecList, filePath=filePath)
-        app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        # addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
-        # denaturate()
-        # annealPrimers()
-        # elongate()
-        # refresh() 
-        #loopPrep()
-        None
+        if seqRecList:
+            updateModel(seqRecList, filePath=filePath)
+            app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+            refresh() 
+            # addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+            # denaturate()
+            # annealPrimers()
+            # elongate()
+            #loopPrep()
     root.mainloop()

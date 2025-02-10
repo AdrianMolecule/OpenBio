@@ -363,19 +363,20 @@ def loadAndSeparateSequences(filePath:str, formatName:str)->list[MySeqRecord]:
 			mySeqRecord.features=list()
 		singleStranded=True if mySeqRecord.annotations.get("molecule_type")=="ss-DNA" else False
 		if singleStranded:
-			myRecord=MySeqRecord(mySeqRecord,True, True, primer=False)
+			myRecord=MySeqRecord(mySeqRecord,singleStranded=True, fiveTo3=True, primer=False)
 			myRecord.removeFullSpanningFeatures()
-			myRecord.singleStranded=True
+			myRecord.removeFeaturesNotOnThisStrand()
 			sequenceRecordList.append(myRecord)	
 		else:# create 2 ss strands
-			myRecord53=MySeqRecord(mySeqRecord,False, True, primer=False)
+			myRecord53=MySeqRecord(mySeqRecord,True, True, primer=False)
 			myRecord53.singleStranded=True
 			myRecord53.removeFullSpanningFeatures()
 			sequenceRecordList.append(myRecord53)
 			threeTo5Record=deepcopy(myRecord53)	
+			myRecord53.removeFeaturesNotOnThisStrand()
 			threeTo5Record.seq=threeTo5Record.seq.complement()
-			myRecord35=MySeqRecord(threeTo5Record,False, False, primer=False)
-			myRecord35.removeFullSpanningFeatures()
+			myRecord35=MySeqRecord(threeTo5Record,True, False, primer=False)
+			myRecord35.removeFeaturesNotOnThisStrand()
 			sequenceRecordList.append(myRecord35)		
 			myRecord53.hybridizedToStrand=myRecord35
 			myRecord35.hybridizedToStrand=myRecord53
@@ -486,16 +487,6 @@ def addPrimer(filePath=None)->Seq:
 	refresh() 
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
-def denaturate( ):
-	for sequenceRecord in Model.modelInstance.sequenceRecordList:
-		sequenceRecord:MySeqRecord
-		if  sequenceRecord.hybridizedToStrand or sequenceRecord.hybridizedToPrimer:
-			sequenceRecord.hybridizedToStrand=False
-			sequenceRecord.hybridizedToPrimer=False
-			sequenceRecord.singleStranded=True
-			sequenceRecord.notAnnealedLocation=None
-	refresh() 
-
 def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed primer can be elongated. This option is not good for determining loops as loops need to be shown even if there is no elongation possible
 	found:list= list()
 	added:bool=False
@@ -584,7 +575,6 @@ def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed prim
 			messagebox.showinfo("No Annealing", f"Primers {names} do not annneal to any present sequence") 
 		else:# found match but not added
 			messagebox.showinfo("No Annealing", f"Primers {names} CAN annneal to {len(found)} sequences but they were not placed on the corresponding strands since they cannot elongate") 
-
 
 def workflow():
 	None
@@ -696,17 +686,42 @@ def deleteSequenceFromModel(uniqueId:int):# only one so no indexing errors are c
 		myRec:MySeqRecord
 		if myRec.uniqueId ==uniqueId:
 			if myRec.hybridizedToPrimer:
-				myRec.hybridizedToPrimer.notAnnealedLocation=None
 				myRec.hybridizedToPrimer.hybridizedToStrand=None
 				myRec.hybridizedToPrimer.notAnnealedLocation=None
+				myRec.hybridizedToPrimer.singleStranded=True
 			if myRec.hybridizedToStrand:
-				myRec.hybridizedToStrand.notAnnealedLocation=None
 				myRec.hybridizedToStrand.hybridizedToPrimer=None                
-				myRec.hybridizedToStrand.notAnnealedLocation=None                
+				myRec.hybridizedToStrand.notAnnealedLocation=None  
+				myRec.hybridizedToStrand.singleStranded=True              
 			Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
 			# print(f"the clicked sequence is found{r.uniqueId}")
 			refresh()
 			break	
+
+def deleteFirstSequenceFromModel():# only one so no indexing errors are created
+	for i,myRec in enumerate(Model.modelInstance.sequenceRecordList):
+		myRec:MySeqRecord
+		if i ==0:
+			if myRec.hybridizedToPrimer:
+				myRec.hybridizedToPrimer.hybridizedToStrand=None
+				myRec.hybridizedToPrimer.notAnnealedLocation=None
+				myRec.hybridizedToPrimer.singleStranded=True
+			if myRec.hybridizedToStrand:
+				myRec.hybridizedToStrand.hybridizedToPrimer=None                
+				myRec.hybridizedToStrand.notAnnealedLocation=None  
+				myRec.hybridizedToStrand.singleStranded=True              
+			Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
+			refresh()
+			break	
+
+def denaturate( ):
+	for sequenceRecord in Model.modelInstance.sequenceRecordList:
+		sequenceRecord:MySeqRecord
+		sequenceRecord.hybridizedToStrand=None
+		sequenceRecord.hybridizedToPrimer=None
+		sequenceRecord.notAnnealedLocation=None
+		sequenceRecord.singleStranded=True
+	refresh() 
 
 def findSequenceIndexInModel(uniqueId:int):
 	for i,r in enumerate(Model.modelInstance.sequenceRecordList):
@@ -830,7 +845,30 @@ def addDirectMenus(menuBar):
 	menuBar.add_command(label="testLeftLoopSplit", command=testLeftLoopSplit)
 	menuBar.add_command(label="testRightLoopSplit", command=testRightLoopSplit)
 	menuBar.add_command(label="testLoopAnneal", command=testLoopAnneal)
-	menuBar.add_command(label="testFullNoAneal", command=testFullNoAnnealStartWithB1cB2)
+	menuBar.add_command(label="testFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
+	menuBar.add_command(label="testFullNoAnnealStartWithB1cB2", command=testFullNoAnnealStartWithB1cB2)
+
+def testFullNoHairStartWithF1cF2():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	deleteFirstSequenceFromModel()
+	denaturate()
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	annealPrimers()
+	elongate()	
+	denaturate()
+	deleteSequenceFromModel(1)
+	leftAlignSequence(3)
+	# #
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1cB2.gb")  
+	annealPrimers()
+	elongate()	
+	# denaturate()
+	# deleteFirstSequenceFromModel()
+	# time.sleep(.5) 
 
 def testFullNoAnnealStartWithB1cB2():
 	Model.modelInstance=None
@@ -839,8 +877,8 @@ def testFullNoAnnealStartWithB1cB2():
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
-	denaturate()
 	deleteSequenceFromModel(uniqueId=0)
+	denaturate()
 	annealPrimers()
 	elongate()	
 	denaturate()

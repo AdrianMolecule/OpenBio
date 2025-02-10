@@ -61,11 +61,12 @@ class MySeqRecord(SeqRecord):
 		collectDict['fiveTo3'] =  str(self.fiveTo3)+"\n"
 		collectDict['xStartOffsetAsLetters'] =  str(self.xStartOffsetAsLetters)+"\n"
 		if self.hybridizedToStrand:
-			collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+"-"+str("5 to 3 " if self.fiveTo3 else "3 to 5")
+			collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+" - "+str("5 to 3 " if self.hybridizedToStrand.fiveTo3 else "3 to 5\n")
 		if self.hybridizedToPrimer:
-			collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
-		collectDict['uniqueId'] = "\n"+ str(self.uniqueId)+"\n"
-		collectDict['notAnnealedLocation'] =  str(self.notAnnealedLocation)+"\n"
+			collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description+" - "+str("5 to 3 " if self.hybridizedToPrimer.fiveTo3 else "3 to 5\n")
+
+		collectDict['uniqueId'] = str(self.uniqueId)
+		collectDict['notAnnealedLocation'] =  "\n"+str(self.notAnnealedLocation)+"\n"
 		collectDict['singleStranded'] = str(self.singleStranded)+"\n"
 		s=""
 		for key in collectDict:
@@ -102,9 +103,9 @@ class MySeqRecord(SeqRecord):
 
 	def removeFeaturesNotOnThisStrand(self): # that is usually where type=="source"
 		for i in range(len(self.features) - 1, -1, -1):
-			if self.fiveTo3 and self.features[i].strand != 1:
+			if self.fiveTo3 and self.features[i].location.strand != 1:
 				self.features.pop(i)		
-			if not self.fiveTo3 and self.features[i].strand != -1:
+			if not self.fiveTo3 and self.features[i].location.strand !=-1:
 				self.features.pop(i)		
 
 			

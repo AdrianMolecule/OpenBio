@@ -579,7 +579,7 @@ def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed prim
 def workflow():
 	None
 
-def hairpins(anneal=True):
+def hairpins(anneal=True):# anneal False is just for debug purpose only
 	if not Model.modelInstance.sequenceRecordList or  len(Model.modelInstance.sequenceRecordList)!=1:
 		if len(Model.modelInstance.sequenceRecordList)!=2 or Model.modelInstance.sequenceRecordList[0].loopInfo==None or Model.modelInstance.sequenceRecordList[1].loopInfo==None or Model.modelInstance.sequenceRecordList[0].loopInfo[1].uniqueId !=Model.modelInstance.sequenceRecordList[1].uniqueId:
 			messagebox.showerror("More than one sequence or 2 unrelated sequences", f"Hairpin analisys is done on only one unannealed sequence and we have { len(Model.modelInstance.sequenceRecordList)} sequences") 
@@ -662,12 +662,14 @@ def elongate():#todo elongate when going left should change the noAnealed region
 			if sequenceRecordPrimer.fiveTo3:     
 				newElongatedRecord.xStartOffsetAsLetters=sequenceRecordPrimer.xStartOffsetAsLetters  
 				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
-				newElongatedRecord.setNotAnnealedLocation(sequenceRecordPrimer.notAnnealedLocation)    
+				if sequenceRecordPrimer.notAnnealedLocation:
+					newElongatedRecord.setNotAnnealedLocation(sequenceRecordPrimer.notAnnealedLocation)    
 			else:# 3 to 5 strand
 				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters, sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
 				newElongatedRecord.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters  
-				shift= len(newElongatedRecord.seq)-len(sequenceRecordPrimer)
-				newElongatedRecord.setNotAnnealedLocation((sequenceRecordPrimer.notAnnealedLocation[0]+shift,sequenceRecordPrimer.notAnnealedLocation[1]+shift))    
+				if sequenceRecordPrimer.notAnnealedLocation:
+					shift= len(newElongatedRecord.seq)-len(sequenceRecordPrimer)
+					newElongatedRecord.setNotAnnealedLocation((sequenceRecordPrimer.notAnnealedLocation[0]+shift,sequenceRecordPrimer.notAnnealedLocation[1]+shift))    
 				# shift the Not annealed locations  
 			newElongatedRecord.hybridizedToPrimer=False
 			newElongatedRecord.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand	
@@ -847,6 +849,27 @@ def addDirectMenus(menuBar):
 	menuBar.add_command(label="testLoopAnneal", command=testLoopAnneal)
 	menuBar.add_command(label="testFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
 	menuBar.add_command(label="testFullNoAnnealStartWithB1cB2", command=testFullNoAnnealStartWithB1cB2)
+	menuBar.add_command(label="testFeatureLabelBug", command=testFeatureLabelBug)
+
+def testFeatureLabelBug():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	denaturate()
+	deleteFirstSequenceFromModel()
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F3.gb")  
+	annealPrimers()
+	elongate()	
+	denaturate()
+	deleteSequenceFromModel(1)
+	leftAlignSequence(3)
+	# #
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B3.gb")  
+	# annealPrimers()
+	# elongate()	
+
 
 def testFullNoHairStartWithF1cF2():
 	Model.modelInstance=None

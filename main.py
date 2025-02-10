@@ -95,18 +95,6 @@ class UiApp:
         buttonDebug = tk.Button(self.bottomButtonBar, text="Toggle Debug", command=toggleDebug)
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
-        column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Test left Loop split", command=testLeftLoopSplit)
-        buttonWorkflow.grid(row=0, column=column, padx=20)   
-
-        #
-        column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Test left Loop split", command=testLeftLoopSplit)
-        buttonWorkflow.grid(row=0, column=column, padx=20)   
-        #
-        column+=1        
-        buttonWorkflow = tk.Button(self.bottomButtonBar, text="Loop Aneal", command=testLoopAneal)
-        buttonWorkflow.grid(row=0, column=column, padx=20)   
         # next row with buttons
         self.stepsButtonBar = tk.Frame(self.root)
         self.stepsButtonBar.grid(row=2, column=1, padx=5, pady=3, sticky=( "ew")) 
@@ -115,9 +103,9 @@ class UiApp:
         buttonDenaturate = tk.Button(self.stepsButtonBar, text="Denaturate", command=lambda:denaturate())
         buttonDenaturate.grid(row=0, column=column)      
         column+=1   
-        # aneal
-        buttonAneal = tk.Button(self.stepsButtonBar, text="Aneal", command=lambda:anealPrimers())
-        buttonAneal.grid(row=0, column=column)   
+        # anneal
+        buttonAnneal = tk.Button(self.stepsButtonBar, text="Anneal", command=lambda:annealPrimers())
+        buttonAnneal.grid(row=0, column=column)   
         column+=1   
         #Elongate
         buttonElongate = tk.Button(self.stepsButtonBar, text="Elongate", command=lambda:elongate())
@@ -133,6 +121,7 @@ class UiApp:
 
     def createMenu(self):
         menuBar = Menu(root)
+        gl.menubar=menuBar
         # Left menu: File Load
         fileMenu = Menu(menuBar, tearoff=0)
         fileMenu.add_command(label="Load File", command=lambda:self.loadSequencesHandler())
@@ -146,16 +135,7 @@ class UiApp:
         exitMenu = Menu(menuBar, tearoff=0)
         exitMenu.add_command(label="Exit", command=self.exitApplication)
         menuBar.add_cascade(label="Exit", menu=exitMenu)
-
-    
-
-        menuBar.add_command(label="testB1B2all", command=testB1B2all)
-        menuBar.add_command(label="testLoadPorkDenaturate", command=testLoadPorkDenaturate)
-        menuBar.add_command(label="testLeftLoopSplit", command=testLeftLoopSplit)
-        menuBar.add_command(label="testRightLoopSplit", command=testRightLoopSplit)
-        menuBar.add_command(label="testLoopAneal", command=testLoopAneal)
-
-
+        addDirectMenus(menuBar)
         # Configuring the root window to use the menu
         root.config(menu=menuBar)   
 
@@ -212,9 +192,9 @@ if __name__ == "__main__":
         seqRecList, filePath=loadSequencesFile(filePath=filePath)
         updateModel(seqRecList, filePath=filePath)
         app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
-        addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
-        denaturate()
-        # anealPrimers()
+        # addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+        # denaturate()
+        # annealPrimers()
         # elongate()
         # refresh() 
         #loopPrep()

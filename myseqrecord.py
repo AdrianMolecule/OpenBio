@@ -27,7 +27,7 @@ class MySeqRecord(SeqRecord):
 		self.hybridizedToStrand:MySeqRecord=None
 		self.hybridizedToPrimer:MySeqRecord=None
 		self.uniqueId=MySeqRecord.uniqueId
-		self.notAnealedLocation:tuple[int, int]=None
+		self.notAnnealedLocation:tuple[int, int]=None
 		self.loopInfo:tuple[MySeqRecord,MySeqRecord,int, bool, bool, int]=None # originalUnsplitRecord, coonectedRecord,isLeft, isTop, splitPointIndex
 		self.visualModel:tuple[int,int,int, int]=None # xStart, yStart, xStop, yStop. this could be used as unique id too probably. Bad style because we use visual position data in the model
 		MySeqRecord.uniqueId+=1
@@ -37,38 +37,39 @@ class MySeqRecord(SeqRecord):
 		# collectDict the attributes from the parent SeqRecord class
 		collectDict['id'] = str(self.id)
 		collectDict['name'] = str(self.name)
-		collectDict['description'] = self.description
-		collectDict['size'] = str(len(self.seq))
-		collectDict['seq'] = self.seq._data.decode('ASCII')
+		collectDict['description'] = self.description+"\n"
+		collectDict['size'] = str(len(self.seq))+"\n"
+		collectDict['seq'] = self.seq._data.decode('ASCII')+"\n"
 		featuresString="\n"
 		for f in self.features:
-			featuresString+=f.type+"   "
+			featuresString+="type:"+f.type+"   "
 			if f.qualifiers.get("label"):
-				featuresString+=str(f.location)+f.qualifiers.get("label")[0]
+				featuresString+="location:"+str(f.location)+" text:"+f.qualifiers.get("label")[0]
 				featuresString+="\n"
 		collectDict['features'] = featuresString
 		annotationsString="\n"
 		#type id qualifier
 		for key, value in self.annotations.items():
 			annotationsString+=(f"{key}= {value}")        
-			annotationsString+="\n"
+			annotationsString+=", "
+		annotationsString+="\n"
 		collectDict['annotations'] = annotationsString        
 		collectDict['dbxrefs'] =  str(self.dbxrefs)
 		# collectDict additional attributes from MySeqRecord
-		collectDict['*******'] = "*************************************************************************************"
-		collectDict['singleStranded'] = str(self.singleStranded)
-		collectDict['isPrimer'] =  str(self.isPrimer)
-		collectDict['fiveTo3'] =  str(self.fiveTo3)
-		collectDict['xStartOffsetAsLetters'] =  str(self.xStartOffsetAsLetters)
+		collectDict['\n*******'] = "*************************************************************************************\n"
+		collectDict['isPrimer'] =  str(self.isPrimer)+"\n"
+		collectDict['fiveTo3'] =  str(self.fiveTo3)+"\n"
+		collectDict['xStartOffsetAsLetters'] =  str(self.xStartOffsetAsLetters)+"\n"
 		if self.hybridizedToStrand:
 			collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+"-"+str("5 to 3 " if self.fiveTo3 else "3 to 5")
 		if self.hybridizedToPrimer:
 			collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
-		collectDict['uniqueId'] =  str(self.uniqueId)
-		collectDict['notAnealedLocation'] =  str(self.notAnealedLocation)
+		collectDict['uniqueId'] =  str(self.uniqueId)+"\n"
+		collectDict['notAnnealedLocation'] =  str(self.notAnnealedLocation)+"\n"
+		collectDict['singleStranded'] = str(self.singleStranded)+"\n"
 		s=""
 		for key in collectDict:
-			s+=key+":"+collectDict[key]+"\n"
+			s+=key+":"+collectDict[key]+" "
 		#
 		if self.loopInfo:
 			s+=f"Loop info: Unsplit sequence:{self.loopInfo[0].seq},Other connected sequence:{self.loopInfo[1].seq}, left loop: {self.loopInfo[2]}, top loop:   {self.loopInfo[3]}\n"
@@ -76,12 +77,12 @@ class MySeqRecord(SeqRecord):
 			s+=f"Visual Model: Start y:{self.visualModel[0]}, end x:   {self.visualModel[2]}\n"
 		return s
 
-	def setNotAnealedLocation(self, startStop:tuple):
-		self.notAnealedLocation: tuple[int, int]=startStop
+	def setNotAnnealedLocation(self, startStop:tuple):
+		self.notAnnealedLocation: tuple[int, int]=startStop
 		
 
-	def getNotAnealedLocation(self)->tuple:
-		return self.notAnealedLocation
+	def getNotAnnealedLocation(self)->tuple:
+		return self.notAnnealedLocation
 		
 	def __repr__(self):
 		# Customize the representation of the item
@@ -94,11 +95,19 @@ class MySeqRecord(SeqRecord):
 
 
 	def removeFullSpanningFeatures(self): # that is usually where type=="source"
-		for i, feature in enumerate(self.features):	
-			if self.toIgnore(feature):
+		for i in range(len(self.features) - 1, -1, -1):
+			if self.toIgnore(self.features[i]):
+					self.features.pop(i)	
+
+
+	def removeFeaturesNotOnThisStrand(self): # that is usually where type=="source"
+		for i in range(len(self.features) - 1, -1, -1):
+			if self.fiveTo3 and self.features[i].strand != 1:
+				self.features.pop(i)		
+			if not self.fiveTo3 and self.features[i].strand != -1:
 				self.features.pop(i)		
 
-
+			
 	def toIgnore(self,feature:SeqFeature)->bool: # usually for record.type=="source" that takes the full length of the sequence):
 		if feature.location.start==0 and feature.location.end==len(self):
 			return True

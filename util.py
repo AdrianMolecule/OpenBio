@@ -7,6 +7,7 @@ from tkinter import filedialog, messagebox, Menu
 #
 import sys
 from pathlib import Path
+from turtle import left
 from typing import no_type_check  
 from PIL import ImageGrab
 #
@@ -50,8 +51,6 @@ def drawCanvas( )->int:
 #draw features from original or cached features
 def drawFeatures( mySequenceRecord: MySeqRecord, yStart: int, font: tuple[str, int], bgColor):
 	for feature in mySequenceRecord.features:
-		if feature.type=="XXXX":
-			continue
 		if ((feature.location.strand == 1 and mySequenceRecord.fiveTo3) or (feature.location.strand == -1 and not mySequenceRecord.fiveTo3) or feature.location.strand==None):
 			loc: Location = feature.location
 			if gl.shrink:
@@ -66,47 +65,43 @@ def drawFeatures( mySequenceRecord: MySeqRecord, yStart: int, font: tuple[str, i
 					   gl.baseRectangleSymbolXPixelSize, gl.baseRectangleSymbolYPixelSize, 
 					bgColor, loc.end - loc.start, font)
 
-def drawPrimer(myRecordPrimer:MySeqRecord, yStart:int)->int:	
+def drawPrimer(myRec:MySeqRecord, yStart:int)->int:	
 	font:tuple[str,int]=(gl.fontName,gl.fontSize)
 	verticalSequenceSpacing:int=gl.verticalSequenceSpacing+5 # blank space between 2 sequences Adrian
-	upsideDownLetter:bool=not myRecordPrimer.fiveTo3 and gl.rotated
-	dnaSequenceStr=MySeqRecord.seqToString(myRecordPrimer.seq)	
-	featureYStart, sequenceYStart, bandYEnd = calculateYs( myRecordPrimer,  yStart)		
+	upsideDownLetter:bool=not myRec.fiveTo3 and gl.rotated
+	dnaSequenceStr=MySeqRecord.seqToString(myRec.seq)	
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( myRec,  yStart)		
 	i=0
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]		
-		if gl.shrink and myRecordPrimer.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
-			xLett=gl.canvasLeftPadding + (myRecordPrimer.xStartOffsetAsLetters+i+gl.maskSkipped[myRecordPrimer.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize
+		if gl.shrink and myRec.hybridizedToStrand: # non attached primers do not have a clear x position as they float in the liquid
+			xLett=gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters+i+gl.maskSkipped[myRec.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize
 		else:
-			xLett=gl.canvasLeftPadding + (myRecordPrimer.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize
+			xLett=gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize
 		color="white" if not gl.coloredBases else gl.prefs.getPreferenceValue(letter)
-		drawBase(letter, xLett, sequenceYStart,  color=color, font=font, notAnealedLocation=myRecordPrimer.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter,fiveTo3=myRecordPrimer.fiveTo3)
-	drawFeatures( myRecordPrimer, featureYStart,  font, 'pink')
-	if gl.shrink:
-		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i+myRecordPrimer.xStartOffsetAsLetters])*gl.baseRectangleSymbolXPixelSize)
-	else:	
-		maxX=gl.canvasLeftPadding + (len(dnaSequenceStr)-(gl.maskSkipped[i])*gl.baseRectangleSymbolXPixelSize)
-		
+		drawBase(letter, xLett, sequenceYStart,  color=color, font=font, notAnealedLocation=myRec.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter,fiveTo3=myRec.fiveTo3)
+	drawFeatures( myRec, featureYStart,  font, 'pink')
 	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton(myRecordPrimer.description[:8], 1, yStart,myRecordPrimer,  labelHeightPx=bandYEnd-yStart)	
+	eb:EnhancedButton=EnhancedButton(myRec.description[:8], 1, yStart,myRec,  labelHeightPx=bandYEnd-yStart)	
+	if myRec.loopInfo:# draw the loop
+		myRec.visualModel=(gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters)*gl.baseRectangleSymbolXPixelSize, sequenceYStart, xLett+gl.baseRectangleSymbolXPixelSize, bandYEnd)
+		drawLoop(myRec,bandYEnd)
 	if  gl.hydrogen : 
 		bandYEnd+=2*gl.hydrogenLinesHalfLength# add a gap to draw the hydrogen bond lines		
-	return  maxX,bandYEnd
+	return  xLett+gl.baseRectangleSymbolXPixelSize,bandYEnd
 
-
-def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
+def drawStrand(myRec:MySeqRecord, yStart:int)->int:
 	font:tuple[str,int]=(gl.fontName,gl.fontSize)
 	# gl.prefs.dump()
-	featureYStart, sequenceYStart, bandYEnd = calculateYs( mySequenceRecord,  yStart)
-	seq:Seq=mySequenceRecord.seq
-	dnaSequenceStr=MySeqRecord.seqToString(seq)
+	featureYStart, sequenceYStart, bandYEnd = calculateYs( myRec,  yStart)
+	dnaSequenceStr=MySeqRecord.seqToString(myRec.seq)
 	spamCount=0
-	upsideDownLetter:bool=not mySequenceRecord.fiveTo3 and gl.rotated
+	upsideDownLetter:bool=not myRec.fiveTo3 and gl.rotated
 	for i in range(len(dnaSequenceStr)):
 		letter: str=dnaSequenceStr[i]			
 		if gl.shrink:
-			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i+gl.maskSkipped[mySequenceRecord.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize	
-			excitingLetter: bool= gl.mask[i+mySequenceRecord.xStartOffsetAsLetters]
+			xLett=gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters+i+gl.maskSkipped[myRec.xStartOffsetAsLetters+i])*gl.baseRectangleSymbolXPixelSize	
+			excitingLetter: bool= gl.mask[i+myRec.xStartOffsetAsLetters]
 			if excitingLetter==True:
 				spamCount=0
 				color =gl.prefs.getPreferenceValue(letter)
@@ -114,24 +109,52 @@ def drawStrand(mySequenceRecord:MySeqRecord, yStart:int)->int:
 				color="grey"
 				spamCount+=1
 			if spamCount<=3:# keep 3 letters
-				drawBase(letter,  xLett, sequenceYStart, color=color, font=font,notAnealedLocation=mySequenceRecord.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
+				drawBase(letter,  xLett, sequenceYStart, color=color, font=font,notAnealedLocation=myRec.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=myRec.fiveTo3)
 		else: # NO SHRINK
-			xLett=gl.canvasLeftPadding + (mySequenceRecord.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize	
+			xLett=gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize	
 			if not gl.coloredBases:
 				color="white"
 			else:
 				color =gl.prefs.getPreferenceValue(letter)
-			drawBase(letter,  xLett, sequenceYStart, color=color, font=font, notAnealedLocation=mySequenceRecord.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=mySequenceRecord.fiveTo3)
-
+			drawBase(letter,  xLett, sequenceYStart, color=color, font=font, notAnealedLocation=myRec.notAnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=myRec.fiveTo3)
 	# Replace the placeholder with the call to the new method
-	drawFeatures(mySequenceRecord, featureYStart,  font,  "white")
-	
+	drawFeatures(myRec, featureYStart,  font,  "white")		
 	# Create labels using the createLabel method
-	eb:EnhancedButton=EnhancedButton( mySequenceRecord.description[:8], 1, yStart,mySequenceRecord, labelHeightPx=bandYEnd-yStart)	
-	if mySequenceRecord.fiveTo3:
+	eb:EnhancedButton=EnhancedButton( myRec.description[:8], 1, yStart,myRec, labelHeightPx=bandYEnd-yStart)	
+	if myRec.loopInfo:# draw the loop
+		myRec.visualModel=(gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters)*gl.baseRectangleSymbolXPixelSize, sequenceYStart, xLett+gl.baseRectangleSymbolXPixelSize, bandYEnd)
+		drawLoop(myRec,bandYEnd)
+	if myRec.fiveTo3:
 		if  gl.hydrogen : 
 			bandYEnd+=2*gl.hydrogenLinesHalfLength# add a gap to draw the hydrogen bond lines	
 	return  xLett+gl.baseRectangleSymbolXPixelSize,bandYEnd
+
+def drawLoop(myRec:MySeqRecord,bandYEnd):
+	gl.canvas.create_rectangle( myRec.visualModel[0], myRec.visualModel[1], myRec.visualModel[2] ,myRec.visualModel[3] ,  outline="red", width=1 )
+	lineL=gl.baseRectangleSymbolXPixelSize-2# might need to check with canvasLeftBorder
+	# originalUnsplitRecord, coonectedRecord,isLeft, isTop
+	leftX=	myRec.visualModel[0]
+	if myRec.loopInfo[2]:#left one
+		if not myRec.loopInfo[3]:#bottom 
+			#left bottom
+			# horiz
+			gl.canvas.create_line(leftX, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2,
+									myRec.loopInfo[1].visualModel[0]-lineL, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2 , fill="red")    
+			# vert
+			gl.canvas.create_line(myRec.loopInfo[1].visualModel[0]-lineL, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2,
+								  myRec.loopInfo[1].visualModel[0]-lineL, myRec.visualModel[1]-(gl.baseRectangleSymbolYPixelSize+gl.hydrogenLinesHalfLength), fill="yellow") 
+		else:#left top
+			gl.canvas.create_line(leftX, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2,
+								leftX	-lineL, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2 , fill="black")    
+	else:# right one
+		if not myRec.loopInfo[3]:#bottom right one
+			gl.canvas.create_line(myRec.visualModel[2], myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2,
+								myRec.loopInfo[1].visualModel[2]+lineL, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2 , fill="green") #color		
+			gl.canvas.create_line(myRec.loopInfo[1].visualModel[2]+lineL, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2,
+								  myRec.loopInfo[1].visualModel[2]+lineL, myRec.visualModel[1]-(gl.baseRectangleSymbolYPixelSize+gl.hydrogenLinesHalfLength), fill="white") #color				
+		else: #right top
+			gl.canvas.create_line(myRec.visualModel[2], myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2,
+								myRec.visualModel[2]+lineL, myRec.visualModel[1]+gl.baseRectangleSymbolYPixelSize/2 , fill="green") #color		
 
 #calculate the yop relative Ys for features and primers and the final y
 def calculateYs(mySequenceRecord, yStart): # adrian for some reason somebody added 5 to verticalSequenceSpacing
@@ -172,7 +195,7 @@ def drawBase(base:str, x, y, color, font, notAnealedLocation:tuple[int,int]=None
 		textId=gl.canvas.create_text(x+gl.baseRectangleSymbolXPixelSize/2, y+gl.baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)			
 	else:
 		textId=gl.canvas.create_text(x+gl.baseRectangleSymbolXPixelSize/2, y+gl.baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
-	if gl.hydrogen and (notAnealedLocation==None or (notAnealedLocation[0]<=letterIndex<notAnealedLocation[1])):
+	if gl.hydrogen and (notAnealedLocation==None or (letterIndex<notAnealedLocation[0] or letterIndex>notAnealedLocation[1])):
 		drawHydrogenBondLines( base, x+1,y + gl.baseRectangleSymbolYPixelSize+1, fiveTo3, color)
 	gl.canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, gl.canvas, None))
 
@@ -498,15 +521,16 @@ def anealPrimers(anealForLoops:bool=False): # aneal only if the anealed primer c
 									where, perfectMatch=whereToElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer))
 								if anealForLoops or can:
 									if not perfectMatch:
-										sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
+										notAnealedLoc=(0, where[0]-1) if where[0]>0 else (where[1]+1,len(sequenceRecordPrimer)-1)	#potential bad code for partial anealing hydrogen link drawing TODO 
+										sequenceRecordPrimer.setNotAnealedLocation(notAnealedLoc)
 									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 									if not perfectMatch:
 										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-										strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
+										strandRegularRecord.setNotAnealedLocation((notAnealedLoc[0]+delta, notAnealedLoc[1]+1+delta))																				
 									# change feature location
 									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
-									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
+									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)	
 									primRec.fiveTo3=False
 									primRec.seq=Seq(MySeqRecord.seqToString(primRec.seq)[::-1])# reverses the string
 									Model.modelInstance.sequenceRecordList.insert(s+1,primRec)
@@ -528,11 +552,13 @@ def anealPrimers(anealForLoops:bool=False): # aneal only if the anealed primer c
 									where, perfectMatch=whereToElongate(largestOverlapsInPrimer,len(sequenceRecordPrimer))
 								if anealForLoops or can:
 									if not perfectMatch:
-										sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
+										notAnealedLoc=(0, where[0]-1) if where[0]>0 else (where[1]+1,len(sequenceRecordPrimer)-1)
+										# sequenceRecordPrimer.setNotAnealedLocation((where[0], where[1]+1))
+										sequenceRecordPrimer.setNotAnealedLocation(notAnealedLoc)
 									sequenceRecordPrimer.xStartOffsetAsLetters=(largestOverlapsInStrand[0][0]-largestOverlapsInPrimer[0][0])+strandRegularRecord.xStartOffsetAsLetters
 									if not perfectMatch:
 										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
-										strandRegularRecord.setNotAnealedLocation((where[0]+delta, where[1]+1+delta))											
+										strandRegularRecord.setNotAnealedLocation((notAnealedLoc[0]+delta, notAnealedLoc[1]+1+delta))											
 									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
 									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
 									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)
@@ -556,34 +582,10 @@ def anealPrimers(anealForLoops:bool=False): # aneal only if the anealed primer c
 			messagebox.showinfo("No Anealing", f"Primers {names} CAN anneal to {len(found)} sequences but they were not placed on the corresponding strands since they cannot elongate") 
 
 
-def workflow1():
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
-	denaturate()
-	anealPrimers()
-	elongate()	
-	denaturate()
-	# time.sleep(.5) 
-	deleteSequence(uniqueId=0)
-	deleteSequence(1)
-	leftAlignSequence(3)
-	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
-	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]
-	myRec.features.clear()	
-	myRec.addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="misc_feature",id=None,label=f"Str_Overlap_Beg{largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
-	myRec.addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="misc_feature", id=None,label=f"Str_Overlap_End{largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
-
-	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
-	refresh()
-
 def workflow():
 	None
 
-def hairpins():
+def hairpins(aneal=True):
 	if not Model.modelInstance.sequenceRecordList or  len(Model.modelInstance.sequenceRecordList)!=1:
 		messagebox.showerror("More than one record", f"Hairpin analisys is done on only one sequence and we have { len(Model.modelInstance.sequenceRecordList)} sequences") 
 		return
@@ -592,65 +594,23 @@ def hairpins():
 	if not largestOverlapsInStrand:
 		messagebox.showerror("No anealing", f"Cannot find hairpins") 
 		return
-	halfRightSideLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
-	splitPointIndex=halfRightSideLoopSize+largestOverlapsInStrand[0][1]+1
+	splitPointIndex=(largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2+largestOverlapsInStrand[0][1]+1
+	if myRec.isLeft(splitPointIndex):
+		splitPointIndex=math.floor(splitPointIndex)
+	else:
+		splitPointIndex=math.ceil(splitPointIndex)
 	newUpperSideRec, newLowerSideRec=myRec.splitRecord(splitPointIndex=splitPointIndex )
+	newUpperSideRec: MySeqRecord
+	newLowerSideRec: MySeqRecord
 	# i=findSequenceIndexInModel(myRec.uniqueId)	
 	Model.modelInstance.sequenceRecordList.append(newUpperSideRec)
-	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
+		# Model.modelInstance.sequenceRecordList[i]=newUpperRec
 	Model.modelInstance.sequenceRecordList.append(newLowerSideRec)
-	newUpperSideRec.preLoop=myRec
-	newLowerSideRec.preLoop=myRec
-	deleteSequence(myRec.uniqueId)
-	anealPrimers(anealForLoops=True)
-	refresh()
-
-def loopAneal():
-	anealPrimers(anealForLoops=True)
-	refresh()
-		
-def testLeftLoopSplit():
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/leftSplitTestCase.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	assert seqRecList and len(seqRecList)==1
-	updateModel(seqRecList, filePath=filePath)	
-	gl.prefs.setPreferenceValue("minPrimerOverlapLength",4                                                                                                                  )
-	Preferences.updateGlobalCache()
-	###############
-	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(myRec.seq, myRec.seq.reverse_complement())
-	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	halfRightSideLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
-	splitPointIndex=halfRightSideLoopSize+largestOverlapsInStrand[0][1]+1
-	newUpperSideRec, newLowerSideRec=myRec.splitRecord(splitPointIndex=splitPointIndex )
-	# i=findSequenceIndexInModel(myRec.uniqueId)	
-	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
-	Model.modelInstance.sequenceRecordList.append(newUpperSideRec)
-	Model.modelInstance.sequenceRecordList.append(newLowerSideRec)
-	refresh()
-
-def testRigthLoopSplit():# cccttttcgc tcaaaa
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/rightSplitTestCase.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	assert seqRecList and len(seqRecList)==1
-	updateModel(seqRecList, filePath=filePath)	
-	gl.prefs.setPreferenceValue("minPrimerOverlapLength",4)
-	Preferences.updateGlobalCache()
-	###############
-	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(myRec.seq, myRec.seq.reverse_complement())
-	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
-	halfRightSideLoopSize=math.floor((largestOverlapsInStrand[1][0]-largestOverlapsInStrand[0][1]-1)/2)
-	splitPointIndex=halfRightSideLoopSize+largestOverlapsInStrand[0][1]+1
-	newUpperSideRec, newLowerSideRec=myRec.splitRecord(splitPointIndex=splitPointIndex )
-	# i=findSequenceIndexInModel(myRec.uniqueId)	
-	# Model.modelInstance.sequenceRecordList[i]=newUpperRec
-	Model.modelInstance.sequenceRecordList.append(newUpperSideRec)
-	Model.modelInstance.sequenceRecordList.append(newLowerSideRec)
+	newUpperSideRec.loopInfo=(myRec,newLowerSideRec, myRec.isLeft(splitPointIndex),True, splitPointIndex)
+	newLowerSideRec.loopInfo=(myRec,newUpperSideRec, myRec.isLeft(splitPointIndex), False, splitPointIndex)
+	deleteSequenceFromModel(myRec.uniqueId)
+	if( aneal):
+		anealPrimers(anealForLoops=True)
 	refresh()
 
 #only if primer.start ==0 when strand is 5 to 3 or when primer.end==primerLen for 3 to 5 strands
@@ -724,7 +684,7 @@ def elongate():
 		messagebox.showerror("Not found", "No primer ready to elongate") 
 	refresh()   
 
-def deleteSequence(uniqueId:int):
+def deleteSequenceFromModel(uniqueId:int):
 	for i,r in enumerate(Model.modelInstance.sequenceRecordList):
 		r:MySeqRecord
 		if r.uniqueId ==uniqueId:
@@ -769,7 +729,7 @@ def clickOnSeqRecordToDelete( event: tk.Event, mySeqRecord:MySeqRecord) -> None:
 	else:
 			None
 			# print(f"Action 1 was not over a character")
-	deleteSequence(mySeqRecord.uniqueId)
+	deleteSequenceFromModel(mySeqRecord.uniqueId)
 
 
 def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
@@ -825,3 +785,81 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
     # tb = traceback.extract_tb(e.__traceback__)
     # for filename, line, func, text in tb:
     #     print(f"Error in {func} at {filename}:{line} - {text}")
+
+
+def workflow1():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	denaturate()
+	anealPrimers()
+	elongate()	
+	denaturate()
+	# time.sleep(.5) 
+	deleteSequenceFromModel(uniqueId=0)
+	deleteSequenceFromModel(1)
+	leftAlignSequence(3)
+	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
+	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]
+	myRec.features.clear()	
+	myRec.addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="misc_feature",id=None,label=f"Str_Overlap_Beg{largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
+	myRec.addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="misc_feature", id=None,label=f"Str_Overlap_End{largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
+
+	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
+	refresh()
+	
+def testB1B2all():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
+	denaturate()
+	anealPrimers()
+	elongate()	
+	denaturate()
+	# time.sleep(.5) 
+	deleteSequenceFromModel(uniqueId=0)
+	deleteSequenceFromModel(1)
+	leftAlignSequence(3)
+
+def testLoadPorkDenaturate():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0		
+	defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
+	filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	# app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
+	denaturate()
+
+
+def testLoopAneal():
+	anealPrimers(anealForLoops=True)
+	refresh()
+		
+def testLeftLoopSplit():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/leftSplitTestCase.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	assert seqRecList and len(seqRecList)==1
+	updateModel(seqRecList, filePath=filePath)	
+	gl.prefs.setPreferenceValue("minPrimerOverlapLength",4                                                                                                                  )
+	Preferences.updateGlobalCache()
+	hairpins(False)
+
+def testRightLoopSplit():# cccttttcgc tcaaaa
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/rightSplitTestCase.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	assert seqRecList and len(seqRecList)==1
+	updateModel(seqRecList, filePath=filePath)	
+	gl.prefs.setPreferenceValue("minPrimerOverlapLength",4)
+	Preferences.updateGlobalCache()
+	hairpins(False)

@@ -7,6 +7,8 @@ from typing import Union
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import MutableSeq
 from Bio.SeqFeature import SeqFeature, SimpleLocation
+
+
 # Define a TypeVar for the class type
 MyT = TypeVar('T', bound='MySeqRecord')
 
@@ -26,6 +28,8 @@ class MySeqRecord(SeqRecord):
 		self.hybridizedToPrimer:MySeqRecord=None
 		self.uniqueId=MySeqRecord.uniqueId
 		self.notAnealedLocation:tuple[int, int]=None
+		self.loopInfo:tuple[MySeqRecord,MySeqRecord,int, bool, bool, int]=None # originalUnsplitRecord, coonectedRecord,isLeft, isTop, splitPointIndex
+		self.visualModel:tuple[int,int,int, int]=None # xStart, yStart, xStop, yStop. this could be used as unique id too probably. Bad style because we use visual position data in the model
 		MySeqRecord.uniqueId+=1
 
 	def __str__(self):
@@ -66,11 +70,13 @@ class MySeqRecord(SeqRecord):
 		for key in collectDict:
 			s+=key+":"+collectDict[key]+"\n"
 		#
+		if self.loopInfo:
+			s+=f"Loop info: Unsplit sequence:{self.loopInfo[0].seq},Other connected sequence:{self.loopInfo[1].seq}, left loop: {self.loopInfo[2]}, top loop:   {self.loopInfo[3]}\n"
+		if self.visualModel:
+			s+=f"Visual Model: Start y:{self.visualModel[0]}, end x:   {self.visualModel[2]}\n"
 		return s
 
 	def setNotAnealedLocation(self, startStop:tuple):
-		# if not self.isPrimer:
-		# 	raise ValueError(f"Invalid operation:  The aneal location can be set only for the primers not for the strands")
 		self.notAnealedLocation: tuple[int, int]=startStop
 		
 
@@ -103,7 +109,7 @@ class MySeqRecord(SeqRecord):
 		# calculates which one stays up and which one goes lower and becomes a primer
 		# returns the top one first
 		if splitPointIndex>=len(self.seq):
-			return
+			return None, None
 		seqString=MySeqRecord.seqToString(self.seq)
 	
 		seqR:Seq=  Seq(seqString[splitPointIndex:])
@@ -115,7 +121,7 @@ class MySeqRecord(SeqRecord):
 		newLeftSideRec=MySeqRecord(SeqRecord(seqL,id=self.id+"_l", name=self.name, description="looped"+ self.description), singleStranded=True,fiveTo3=True,primer=False)
 		newLeftSideRec.features=newFeaturesBefore
 		newLeftSideRec.xStartOffsetAsLetters=0#newUpper.xStartOffsetAsLetters+extraIndentForSecond is good too
-		if splitPointIndex*2<len(self.seq): # I split on the left side of visually shown sequence
+		if  self.isLeft(splitPointIndex): # I split on the left side of visually shown sequence
 			# leftSideDown=True
 			newLeftSideRec.isPrimer=True
 			return newRightSideRec, newLeftSideRec
@@ -123,6 +129,9 @@ class MySeqRecord(SeqRecord):
 			newRightSideRec.isPrimer=True
 			return newLeftSideRec, newRightSideRec
 
+
+	def isLeft(self, splitPointIndex):
+		return splitPointIndex*2<len(self.seq)
 	
 		# for a in self.annotations:
 		# 	start=a.location.start

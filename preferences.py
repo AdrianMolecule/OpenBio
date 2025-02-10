@@ -199,7 +199,7 @@ class Preferences:
         # 
         p:dict[str,Preference] = {
             "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/samples/porkcomplete.gb", str,"Path to the default file"),
-            "canvasLeftPadding":   Preference("canvasLeftPadding", int,  0, int,"Horizontal margin for the canvas"),
+            "canvasLeftPadding":   Preference("canvasLeftPadding", int,  10, int,"Horizontal margin for the canvas"),
             "fontName":                 Preference("fontName", str, "Arial",  str,"Font type for the canvas"),
             "fontSize":                 Preference("fontSize", int, 10, int,"Font type for the canvas"),
             "horizontalPixelsMargin":   Preference("horizontalPixelsMargin", int,  2,int, "head room between the base letter and it's holding box"),

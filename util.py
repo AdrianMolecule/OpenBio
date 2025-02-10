@@ -344,10 +344,12 @@ def loadSequencesFile(filePath=None)->tuple[list[MySeqRecord], str]:
 			seqRecList=loadAndSeparateSequences(filePath, formatName)
 		except Exception as e:
 			messagebox.showerror("Error", f"An error occurred while reading the file: {e}")
+			return None,None
 	else:
 			messagebox.showwarning("No file", "Please select a file")
 	if seqRecList is None or len(seqRecList)==0:
 		messagebox.showerror("No Sequences", f" Please select a file that has at least one sequence") 
+		return None,None
 		# raise FileNotFoundError("no model loaded")
 	return seqRecList, filePath	
 
@@ -589,7 +591,7 @@ def workflow():
 
 def hairpins(anneal=True):
 	if not Model.modelInstance.sequenceRecordList or  len(Model.modelInstance.sequenceRecordList)!=1:
-		if len(Model.modelInstance.sequenceRecordList)!=2 or Model.modelInstance.sequenceRecordList[0].loopInfo==None or Model.modelInstance.sequenceRecordList[1].loopInfo==None or Model.modelInstance.sequenceRecordList[0].loopInfo[1].uniqueId !=Model.modelInstance.sequenceRecordList[1].loopInfo[1].uniqueId:
+		if len(Model.modelInstance.sequenceRecordList)!=2 or Model.modelInstance.sequenceRecordList[0].loopInfo==None or Model.modelInstance.sequenceRecordList[1].loopInfo==None or Model.modelInstance.sequenceRecordList[0].loopInfo[1].uniqueId !=Model.modelInstance.sequenceRecordList[1].uniqueId:
 			messagebox.showerror("More than one sequence or 2 unrelated sequences", f"Hairpin analisys is done on only one unannealed sequence and we have { len(Model.modelInstance.sequenceRecordList)} sequences") 
 			return
 	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]	
@@ -828,6 +830,30 @@ def addDirectMenus(menuBar):
 	menuBar.add_command(label="testLeftLoopSplit", command=testLeftLoopSplit)
 	menuBar.add_command(label="testRightLoopSplit", command=testRightLoopSplit)
 	menuBar.add_command(label="testLoopAnneal", command=testLoopAnneal)
+	menuBar.add_command(label="testFullNoAneal", command=testFullNoAnnealStartWithB1cB2)
+
+def testFullNoAnnealStartWithB1cB2():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
+	denaturate()
+	deleteSequenceFromModel(uniqueId=0)
+	annealPrimers()
+	elongate()	
+	denaturate()
+	# time.sleep(.5) 
+	deleteSequenceFromModel(1)
+	leftAlignSequence(3)
+	#
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	annealPrimers()
+	elongate()	
+	denaturate()
+
+	leftAlignSequence(3)	
 	
 def testB1B2partial():
 	Model.modelInstance=None

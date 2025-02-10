@@ -64,7 +64,7 @@ class MySeqRecord(SeqRecord):
 			collectDict['hybridizedToStrand'] =  self.hybridizedToStrand.description+"-"+str("5 to 3 " if self.fiveTo3 else "3 to 5")
 		if self.hybridizedToPrimer:
 			collectDict['hybridizedToPrimer'] =  self.hybridizedToPrimer.description
-		collectDict['uniqueId'] =  str(self.uniqueId)+"\n"
+		collectDict['uniqueId'] = "\n"+ str(self.uniqueId)+"\n"
 		collectDict['notAnnealedLocation'] =  str(self.notAnnealedLocation)+"\n"
 		collectDict['singleStranded'] = str(self.singleStranded)+"\n"
 		s=""

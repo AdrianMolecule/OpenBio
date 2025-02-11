@@ -28,4 +28,4 @@ make a requirements.txt using: python -m pip freeze > requirements.txt
 
 
 
-pyinstaller --noconfirm --onefile main.py --console --add-data "C:\a\diy\pythonProjects\openbio\samples;/samples/"  
+pyinstaller --noconfirm --onefile main.py --console --add-data "samples/;samples"

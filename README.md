@@ -1,7 +1,7 @@
 There are no Open Source Applications similar to Benchling, SnapGene or Geneious that work and I'm aware of.
 This is an Open Source app to manipulate DNA and AA sequences.
 It's based on a fairly rich library called BioPython.
-It was started because Benchling is proprietary and does not allow extending the functionality
+It was started because Benchling is proprietary and does not allow extending the functionality.
 I needed to qualitatively verify LAMP primers and there was no tool to do that.
 At this point it acts as a simulator and can be use to simulate PCR, partial LAMP and I'll add Gibson assembly functionality soon. 
 I added a lot of features like rotating the text for 3 to5 strands and show hydrogen bonds so it shoul be easy to use both in design and education.

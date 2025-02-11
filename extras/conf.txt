@@ -1,0 +1,31 @@
+https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/
+
+in terminal
+py -m venv .venv
+.venv\Scripts\activate
+
+py -m pip install --upgrade pip
+
+install libs
+py -m pip install biopython
+py -m pip install pillow
+py -m pip install pillow
+
+
+
+==============
+make an exe
+go inside the directory in a cmd
+openbiox>pyinstaller --onefile main.py
+
+
+or use auto-py-to-exe
+
+
+
+
+make a requirements.txt using: python -m pip freeze > requirements.txt
+
+
+
+pyinstaller --noconfirm --onefile main.py --console --add-data "C:\a\diy\pythonProjects\openbio\samples;/samples/"  

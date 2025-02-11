@@ -1,0 +1,10 @@
+.sglock/*
+__pycache__/*
+beforeMakDNAPrinting.zip
+samples/*
+extras/*
+build/*
+dist/*
+main.spec
+requirements.txt
+main.exe

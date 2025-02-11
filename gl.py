@@ -31,3 +31,4 @@ a=None
 c=None
 g=None
 t=None
+basePath=None

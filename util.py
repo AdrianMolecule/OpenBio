@@ -4,6 +4,7 @@ from multiprocessing import log_to_stderr
 from tkinter import Canvas, Button
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
+from pathlib import Path
 #
 import sys
 import os
@@ -825,31 +826,6 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
     # for filename, line, func, text in tb:
     #     print(f"Error in {func} at {filename}:{line} - {text}")
 
-
-def workflow1():
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=	os.getcwd()+"/samples/porkcomplete.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
-	denaturate()
-	annealPrimers()
-	elongate()	
-	denaturate()
-	# time.sleep(.5) 
-	deleteSequenceFromModel(uniqueId=0)
-	deleteSequenceFromModel(1)
-	leftAlignSequence(3)
-	overlaps, largestOverlapsInStrand, largestOverlapsInPrimer=PrimerUtils.findPrimerOverlaps(Model.modelInstance.sequenceRecordList[0].seq, Model.modelInstance.sequenceRecordList[0].seq.reverse_complement())
-	myRec: MySeqRecord=Model.modelInstance.sequenceRecordList[0]
-	myRec.features.clear()	
-	myRec.addFeature(largestOverlapsInStrand[0][0], largestOverlapsInStrand[0][1]+1,strand=None, type="misc_feature",id=None,label=f"Str_Overlap_Beg{largestOverlapsInStrand[0][0]}-{ largestOverlapsInStrand[0][1]}")
-	myRec.addFeature(largestOverlapsInStrand[1][0], largestOverlapsInStrand[1][1]+1,strand=None, type="misc_feature", id=None,label=f"Str_Overlap_End{largestOverlapsInStrand[1][0]}-{largestOverlapsInStrand[1][1]}")
-
-	# print(f"largestOverlapsInPrimer {largestOverlapsInPrimer[0]}  {largestOverlapsInPrimer[1]}")
-	refresh()
-
 def addDirectMenus(menuBar):
 	menuBar.add_command(label="testLoadPorkDenaturate", command=testLoadPorkDenaturate)
 	menuBar.add_command(label="testFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
@@ -862,42 +838,27 @@ def addDirectMenus(menuBar):
 	# menuBar.add_command(label="testFeatureLabelBug", command=testFeatureLabelBug)
 	# menuBar.add_command(label="testF1F2all", command=testF1F2all)
 
-def testFeatureLabelBug():
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/porkcomplete.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	updateModel(seqRecList, filePath=filePath)
-	denaturate()
-	deleteFirstSequenceFromModel()
-	addPrimer(os.getcwd()+"/samples/F3.gb")  
-	annealPrimers()
-	elongate()	
-	denaturate()
-	deleteSequenceFromModel(1)
-	leftAlignSequence(3)
-	# #
-	addPrimer(filePath=os.getcwd()+"/samples/B3.gb")  
-	# annealPrimers()
-	# elongate()	
+def getFullPath(relativeFileName:str):	
+	return gl.basePath+"/"+relativeFileName
 
 
 def testFullNoHairStartWithF1cF2():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/porkcomplete.gb"
+	filePath=getFullPath("samples/porkcomplete.gb")
+	print("filePath is:",filePath)
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	deleteFirstSequenceFromModel()
 	denaturate()
-	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
+	addPrimer(filePath=getFullPath("samples/F1CF2.gb"))  
 	annealPrimers()
 	elongate()	
 	denaturate()
 	deleteSequenceFromModel(1)
 	leftAlignSequence(3)
 	# #
-	addPrimer(filePath=os.getcwd()+"/samples/B1cB2.gb")  
+	addPrimer(filePath=getFullPath("samples/B1cB2.gb"))
 	annealPrimers()
 	elongate()	
 	denaturate()
@@ -907,19 +868,20 @@ def testFullNoHairStartWithF1cF2():
 def testFullNoHairStartWithB1cB2():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/porkcomplete.gb"
+	filePath=getFullPath("samples/porkcomplete.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	denaturate()
 	deleteSequenceFromModel(uniqueId=1)
-	addPrimer(filePath=os.getcwd()+"/samples/B1CB2.gb")  
+	addPrimer(filePath=getFullPath("samples/B1cB2.gb"))
 	annealPrimers()
 	elongate()
 	denaturate()
 
 	deleteFirstSequenceFromModel()
 	# leftAlignSequence(3)
-	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
+	filePath=getFullPath("samples/F1CF2.gb")
+	addPrimer(filePath)  
 	annealPrimers()
 	elongate()	
 	denaturate()
@@ -929,15 +891,15 @@ def testFullNoHairStartWithB1cB2():
 def pCRsample():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/porkcomplete.gb"
+	filePath=getFullPath("samples/porkcomplete.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	denaturate()
-	addPrimer(filePath=os.getcwd()+"/samples/F3.gb")  
+	addPrimer(filePath=getFullPath("samples/F3.gb")) 
 	annealPrimers()
 	elongate()	
 	denaturate()	
-	addPrimer(filePath=os.getcwd()+"/samples/B3.gb") 
+	addPrimer(filePath=getFullPath("samples/B3.gb"))
 	deleteFirstSequenceFromModel()
 	deleteSequenceFromModel(uniqueId=1)
 	annealPrimers()
@@ -949,10 +911,10 @@ def pCRsample():
 def testB1B2all():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/porkcomplete.gb"
+	filePath=getFullPath("samples/porkcomplete.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=os.getcwd()+"/samples/B1CB2.gb")  
+	addPrimer(filePath=getFullPath("samples/B1cB2.gb"))  
 	denaturate()
 	annealPrimers()
 	elongate()	
@@ -965,10 +927,10 @@ def testB1B2all():
 def testF1F2all():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/porkcomplete.gb"
+	filePath=getFullPath("samples/porkcomplete.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
+	addPrimer(filePath=getFullPath("samples/F1CF2.gb")) 	
 	denaturate()
 	annealPrimers()
 	elongate()	
@@ -981,8 +943,7 @@ def testF1F2all():
 def testLoadPorkDenaturate():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0		
-	defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
-	filePath=os.getcwd()+defaultTestFileValue
+	filePath=getFullPath("samples/porkcomplete.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	# app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
@@ -996,7 +957,7 @@ def testLoopAnneal():
 def testLeftLoopSplit():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/leftSplitTestCase.gb"
+	filePath=getFullPath("samples/leftSplitTestCase.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	assert seqRecList and len(seqRecList)==1
 	updateModel(seqRecList, filePath=filePath)	
@@ -1007,7 +968,7 @@ def testLeftLoopSplit():
 def testRightLoopSplit():# cccttttcgc tcaaaa
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=os.getcwd()+"/samples/rightSplitTestCase.gb"
+	filePath=getFullPath("samples/rightSplitTestCase.gb")
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	assert seqRecList and len(seqRecList)==1
 	updateModel(seqRecList, filePath=filePath)	

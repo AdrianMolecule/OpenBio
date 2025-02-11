@@ -182,11 +182,23 @@ class UiApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = UiApp(root)
+    
+# works with # works with pyinstaller --add-data "samples/;samples" t.py
+#pyinstaller --noconfirm --onefile main.py --console --add-data "samples/;samples"
+
+    base=None
+    if getattr(sys, 'frozen', False):  # If running from a bundled executable
+        print("running from a bundled Exec")
+        base= str(Path(sys._MEIPASS))
+    else:  # If running from a script
+        base=os.getcwd()
+    gl.basePath=base
     defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
     if defaultTestFileValue == "":
-        seqRecList, filePath=loadSequencesFile() 
-        updateModel(seqRecList, filePath=filePath)
-        app.root.title("OpenBio "+Model.modelInstance.loadedFileName)        
+         None
+        # seqRecList, filePath=loadSequencesFile() 
+        # updateModel(seqRecList, filePath=filePath)
+        # app.root.title("OpenBio "+Model.modelInstance.loadedFileName)        
     else:
         filePath=os.getcwd()+defaultTestFileValue
         seqRecList, filePath=loadSequencesFile(filePath=filePath)

@@ -379,7 +379,9 @@ def loadAndSeparateSequences(filePath:str, formatName:str)->list[MySeqRecord]:
 			myRecord35.removeFeaturesNotOnThisStrand()
 			sequenceRecordList.append(myRecord35)		
 			myRecord53.hybridizedToStrand=myRecord35
+			myRecord53.hybridizedToPrimer=None
 			myRecord35.hybridizedToStrand=myRecord53
+			myRecord35.hybridizedToPrimer=None
 	return 	sequenceRecordList 
 
 
@@ -522,7 +524,9 @@ def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed prim
 										strandRegularRecord.setNotAnnealedLocation((notAnnealedLoc[0]+delta, notAnnealedLoc[1]+delta))																				
 									# change feature location
 									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
+									sequenceRecordPrimer.hybridizedToPrimer=None
 									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer 
+									strandRegularRecord.hybridizedToStrand=None 
 									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)	# todo understantd if popping messes up the list loop
 									primRec.fiveTo3=False
 									primRec.seq=Seq(MySeqRecord.seqToString(primRec.seq)[::-1])# reverses the string
@@ -554,7 +558,9 @@ def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed prim
 										delta=sequenceRecordPrimer.xStartOffsetAsLetters-strandRegularRecord.xStartOffsetAsLetters
 										strandRegularRecord.setNotAnnealedLocation((notAnnealedLoc[0]+delta, notAnnealedLoc[1]+delta))	
 									sequenceRecordPrimer.hybridizedToStrand=strandRegularRecord
+									sequenceRecordPrimer.hybridizedToPrimer=None
 									strandRegularRecord.hybridizedToPrimer=sequenceRecordPrimer
+									strandRegularRecord.hybridizedToStrand=None
 									primRec:MySeqRecord=Model.modelInstance.sequenceRecordList.pop(p)	# todo understantd if popping messes up the list loop
 									primRec.fiveTo3=True
 									Model.modelInstance.sequenceRecordList.insert(s,primRec)
@@ -664,15 +670,22 @@ def elongate():#todo elongate when going left should change the noAnealed region
 				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(0, len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
 				if sequenceRecordPrimer.notAnnealedLocation:
 					newElongatedRecord.setNotAnnealedLocation(sequenceRecordPrimer.notAnnealedLocation)    
-			else:# 3 to 5 strand
-				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters, sequenceRecordPrimer.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq), strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
+			else:# primer is 3 to 5
+				oldPrimerFeature:SeqFeature=SeqFeature(SimpleLocation(sequenceRecordPrimer.xStartOffsetAsLetters-
+														  sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters,
+														   sequenceRecordPrimer.xStartOffsetAsLetters-
+														   sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters+len(sequenceRecordPrimer.seq),
+															 strand=None), type="old_sequence", id="elongated primer", qualifiers={"label": [featureLabel]})
 				newElongatedRecord.xStartOffsetAsLetters=sequenceRecordPrimer.hybridizedToStrand.xStartOffsetAsLetters  
 				if sequenceRecordPrimer.notAnnealedLocation:
 					shift= len(newElongatedRecord.seq)-len(sequenceRecordPrimer)
 					newElongatedRecord.setNotAnnealedLocation((sequenceRecordPrimer.notAnnealedLocation[0]+shift,sequenceRecordPrimer.notAnnealedLocation[1]+shift))    
 				# shift the Not annealed locations  
-			newElongatedRecord.hybridizedToPrimer=False
+			#change the old sequence to point to the new one where 
+			sequenceRecordPrimer.hybridizedToStrand.hybridizedToPrimer=None		
+			sequenceRecordPrimer.hybridizedToStrand.hybridizedToStrand=newElongatedRecord		
 			newElongatedRecord.hybridizedToStrand=sequenceRecordPrimer.hybridizedToStrand	
+			newElongatedRecord.hybridizedToPrimer=None	
 			newElongatedRecord.uniqueId=sequenceRecordPrimer.uniqueId    
 			newElongatedRecord.features.insert(0,oldPrimerFeature)
 			Model.modelInstance.sequenceRecordList.pop(i)# remove the primer to replace it with elongated sequence 	# to do understantd if popping messes up the list loop
@@ -841,15 +854,15 @@ def workflow1():
 
 def addDirectMenus(menuBar):
 	menuBar.add_command(label="testLoadPorkDenaturate", command=testLoadPorkDenaturate)
-	menuBar.add_command(label="testF1F2all", command=testF1F2all)
-	menuBar.add_command(label="testB1B2partial", command=testB1B2partial)
-	menuBar.add_command(label="testB1B2all", command=testB1B2all)
+	menuBar.add_command(label="testFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
+	menuBar.add_command(label="testFullNoHairStartWithB1cB2", command=testFullNoHairStartWithB1cB2)
+	# menuBar.add_command(label="testB1B2partial", command=testB1B2partial)
+	menuBar.add_command(label="pCRsample", command=pCRsample)
 	menuBar.add_command(label="testLeftLoopSplit", command=testLeftLoopSplit)
 	menuBar.add_command(label="testRightLoopSplit", command=testRightLoopSplit)
 	menuBar.add_command(label="testLoopAnneal", command=testLoopAnneal)
-	menuBar.add_command(label="testFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
-	menuBar.add_command(label="testFullNoAnnealStartWithB1cB2", command=testFullNoAnnealStartWithB1cB2)
-	menuBar.add_command(label="testFeatureLabelBug", command=testFeatureLabelBug)
+	# menuBar.add_command(label="testFeatureLabelBug", command=testFeatureLabelBug)
+	# menuBar.add_command(label="testF1F2all", command=testF1F2all)
 
 def testFeatureLabelBug():
 	Model.modelInstance=None
@@ -889,34 +902,11 @@ def testFullNoHairStartWithF1cF2():
 	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1cB2.gb")  
 	annealPrimers()
 	elongate()	
-	# denaturate()
-	# deleteFirstSequenceFromModel()
+	denaturate()
+	deleteFirstSequenceFromModel()
 	# time.sleep(.5) 
 
-def testFullNoAnnealStartWithB1cB2():
-	Model.modelInstance=None
-	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
-	seqRecList, filePath=loadSequencesFile(filePath=filePath)
-	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
-	deleteSequenceFromModel(uniqueId=0)
-	denaturate()
-	annealPrimers()
-	elongate()	
-	denaturate()
-	# time.sleep(.5) 
-	deleteSequenceFromModel(1)
-	leftAlignSequence(3)
-	#
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
-	annealPrimers()
-	elongate()	
-	denaturate()
-
-	leftAlignSequence(3)	
-	
-def testB1B2partial():
+def testFullNoHairStartWithB1cB2():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
 	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
@@ -926,6 +916,36 @@ def testB1B2partial():
 	deleteSequenceFromModel(uniqueId=1)
 	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
 	annealPrimers()
+	elongate()
+	denaturate()
+
+	deleteFirstSequenceFromModel()
+	# leftAlignSequence(3)
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	annealPrimers()
+	elongate()	
+	denaturate()
+	deleteSequenceFromModel(uniqueId=3)	
+	# leftAlignSequence(3)	
+	
+def pCRsample():
+	Model.modelInstance=None
+	MySeqRecord.uniqueId=0
+	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	seqRecList, filePath=loadSequencesFile(filePath=filePath)
+	updateModel(seqRecList, filePath=filePath)
+	denaturate()
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F3.gb")  
+	annealPrimers()
+	elongate()	
+	denaturate()	
+	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B3.gb") 
+	deleteFirstSequenceFromModel()
+	deleteSequenceFromModel(uniqueId=1)
+	annealPrimers()
+	elongate()	
+	denaturate()	
+	deleteSequenceFromModel(uniqueId=3)
 
 
 def testB1B2all():

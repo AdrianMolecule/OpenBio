@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
 #
 import sys
-from pathlib import Path
+import os
 from turtle import left
 from typing import no_type_check  
 from PIL import ImageGrab

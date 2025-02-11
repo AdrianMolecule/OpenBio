@@ -1,6 +1,7 @@
 import random
 import string
-from pathlib import Path  
+import os
+
 
 def generate_postscript(filename, text):
     """
@@ -30,5 +31,5 @@ random_string = "START aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 # Generate the PostScript file
 #filePath=str(Path(__file__).resolve().parent)+"/"+
-generate_postscript(str(Path(__file__).resolve().parent)+"/"+"long_string.ps", random_string)
+generate_postscript(os.getcwd()+"/"+"long_string.ps", random_string)
 print(f"PostScript file 'long_string.ps' generated with a string of 1000 letters.")

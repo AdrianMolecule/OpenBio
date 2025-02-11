@@ -188,7 +188,7 @@ if __name__ == "__main__":
         updateModel(seqRecList, filePath=filePath)
         app.root.title("OpenBio "+Model.modelInstance.loadedFileName)        
     else:
-        filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
+        filePath=os.getcwd()+defaultTestFileValue
         seqRecList, filePath=loadSequencesFile(filePath=filePath)
         if seqRecList:
             updateModel(seqRecList, filePath=filePath)

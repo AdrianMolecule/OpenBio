@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
 #
 import sys
-from pathlib import Path
+import os
 from turtle import left
 from typing import no_type_check  
 from PIL import ImageGrab
@@ -266,7 +266,6 @@ def updateMaskSkipped():# todo call it only if skipped and the current one is No
 		gl.maskSkipped[i] = -skip  # gray but visible
 
 def printCanvas():
-	# filePath=str(Path(__file__).resolve().parent)+"/junk"
 	# canvas.postscript(file=filePath, colormode='color')
  	# # Get the canvas's total scrollable area (scrollregion)
 	scrollregion = gl.canvas.bbox("all")  # Returns (x1, y1, x2, y2)    
@@ -295,7 +294,6 @@ def printCanvas():
 		print("Canvas has no scrollable content.")
 
 def saveModel():	
-	currentDir=str(Path(__file__).resolve().parent)
 	format:list=gl.prefs.getPreferenceValue(preference_name="format")
 	formatPrompt=format.split(",")[0]
 	formatExtension=format.split(",")[2]
@@ -328,7 +326,7 @@ def updateModel(seqRecList, filePath=None):
 
 # the ID line is parsed in  C:\a\diy\pythonProjects\DNAPrinting\.venv\Lib\site-packages\Bio\GenBank\Scanner.py EmblScanner._feed_first_line and the parsing in line 788
 def loadSequencesFile(filePath=None)->tuple[list[MySeqRecord], str]:	
-	currentDir=str(Path(__file__).resolve().parent)
+	currentDir=os.getcwd()
 	format:list=gl.prefs.getPreferenceValue(preference_name="format")
 	formatPrompt=format.split(",")[0]
 	formatName=format.split(",")[1]
@@ -831,10 +829,10 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
 def workflow1():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=	os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
 	denaturate()
 	annealPrimers()
 	elongate()	
@@ -867,19 +865,19 @@ def addDirectMenus(menuBar):
 def testFeatureLabelBug():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	denaturate()
 	deleteFirstSequenceFromModel()
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F3.gb")  
+	addPrimer(os.getcwd()+"/samples/F3.gb")  
 	annealPrimers()
 	elongate()	
 	denaturate()
 	deleteSequenceFromModel(1)
 	leftAlignSequence(3)
 	# #
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B3.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/B3.gb")  
 	# annealPrimers()
 	# elongate()	
 
@@ -887,19 +885,19 @@ def testFeatureLabelBug():
 def testFullNoHairStartWithF1cF2():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	deleteFirstSequenceFromModel()
 	denaturate()
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
 	annealPrimers()
 	elongate()	
 	denaturate()
 	deleteSequenceFromModel(1)
 	leftAlignSequence(3)
 	# #
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1cB2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/B1cB2.gb")  
 	annealPrimers()
 	elongate()	
 	denaturate()
@@ -909,19 +907,19 @@ def testFullNoHairStartWithF1cF2():
 def testFullNoHairStartWithB1cB2():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	denaturate()
 	deleteSequenceFromModel(uniqueId=1)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/B1CB2.gb")  
 	annealPrimers()
 	elongate()
 	denaturate()
 
 	deleteFirstSequenceFromModel()
 	# leftAlignSequence(3)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
 	annealPrimers()
 	elongate()	
 	denaturate()
@@ -931,15 +929,15 @@ def testFullNoHairStartWithB1cB2():
 def pCRsample():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	denaturate()
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F3.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/F3.gb")  
 	annealPrimers()
 	elongate()	
 	denaturate()	
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B3.gb") 
+	addPrimer(filePath=os.getcwd()+"/samples/B3.gb") 
 	deleteFirstSequenceFromModel()
 	deleteSequenceFromModel(uniqueId=1)
 	annealPrimers()
@@ -951,10 +949,10 @@ def pCRsample():
 def testB1B2all():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/B1CB2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/B1CB2.gb")  
 	denaturate()
 	annealPrimers()
 	elongate()	
@@ -967,10 +965,10 @@ def testB1B2all():
 def testF1F2all():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/porkcomplete.gb"
+	filePath=os.getcwd()+"/samples/porkcomplete.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
-	addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
+	addPrimer(filePath=os.getcwd()+"/samples/F1CF2.gb")  
 	denaturate()
 	annealPrimers()
 	elongate()	
@@ -984,7 +982,7 @@ def testLoadPorkDenaturate():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0		
 	defaultTestFileValue=gl.prefs.getPreferenceValue("defaultTestFileValue")
-	filePath=str(Path(__file__).resolve().parent)+defaultTestFileValue
+	filePath=os.getcwd()+defaultTestFileValue
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	updateModel(seqRecList, filePath=filePath)
 	# app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
@@ -998,7 +996,7 @@ def testLoopAnneal():
 def testLeftLoopSplit():
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/leftSplitTestCase.gb"
+	filePath=os.getcwd()+"/samples/leftSplitTestCase.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	assert seqRecList and len(seqRecList)==1
 	updateModel(seqRecList, filePath=filePath)	
@@ -1009,7 +1007,7 @@ def testLeftLoopSplit():
 def testRightLoopSplit():# cccttttcgc tcaaaa
 	Model.modelInstance=None
 	MySeqRecord.uniqueId=0
-	filePath=str(Path(__file__).resolve().parent)+"/samples/rightSplitTestCase.gb"
+	filePath=os.getcwd()+"/samples/rightSplitTestCase.gb"
 	seqRecList, filePath=loadSequencesFile(filePath=filePath)
 	assert seqRecList and len(seqRecList)==1
 	updateModel(seqRecList, filePath=filePath)	

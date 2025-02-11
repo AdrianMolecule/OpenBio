@@ -115,7 +115,6 @@ class UiApp:
         buttonHairpins = tk.Button(self.stepsButtonBar, text="Hairpins", command=lambda:hairpins())
         buttonHairpins.grid(row=0, column=column)   
 
-
     def exitApplication(self):
         self.root.quit()      
 

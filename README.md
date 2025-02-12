@@ -8,8 +8,8 @@ I added a lot of features like rotating the text for 3 to5 strands and show hydr
 
 There are some known limitations at this point. It supports just gb format but I also have unrelease code that do embl. Overlapping features don't visually overlap well, you can aneal one primer at a time and a strand with 2 loops is not very well depicted on one site.
 Please contact me if you want me to improve on those.
-The code was developed in VSS so the project should be pretty easy to install but to make it simpler I created a Windows Executable called main.exe you can download.
-Once you click on the executable it takes several seconds to start but it should be fine afterwards.
+The code was developed in VSS so the project should be pretty easy to install but to make it simpler I created a Windows Executable called OpenBio.exe that you can download from the dist directory. After that and just click on the file on your Windows computer. https://github.com/AdrianMolecule/OpenBio/blob/master/dist/OpenBio.exe
+Once you click on the executable it takes several seconds to start and it's fast afterwards.
 
 The intention was to add features when I feel the need.
 

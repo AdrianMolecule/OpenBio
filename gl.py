@@ -11,7 +11,6 @@ canvas=None # blank space from the left edge of canvas
 mask:list[int]=None
 maskSkipped:list[int]=None
 canvasHeight=800
-debug=True
 # cache below
 fontName=None
 fontSize=None
@@ -32,3 +31,5 @@ c=None
 g=None
 t=None
 basePath=None
+debug=False
+gl.indexLabel=None

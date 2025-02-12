@@ -1,6 +1,6 @@
 import tkinter as tk
 from util import *
-from gl import *
+import gl
 from preferences import Preferences
 
 class UiApp:
@@ -50,6 +50,15 @@ class UiApp:
         canvasFrame.grid_columnconfigure(0, weight=1)
         canvasFrame.grid_rowconfigure(0, weight=2)
         gl.canvas=self.canvas
+        
+    def toggleDebug(self):
+        gl.debug = True if not gl.debug  else False
+        gl.prefs.setPreferenceValue("debug", gl.debug)
+        if gl.debug:
+            addDirectMenus(self.menuBar)
+        else:
+            removeDirectMenus(self.menuBar)
+        refresh()
 
     def createButtonBars(self):
         # Create horizontal button bar at the bottom
@@ -87,12 +96,8 @@ class UiApp:
         column+=1        
         buttonRefresh = tk.Button(self.bottomButtonBar, text="Refresh", command=refresh)
         buttonRefresh.grid(row=0, column=column, padx=3)   
-        #debug
-        column+=1 
-        def toggleDebug():
-            gl.debug = not gl.debug  
-            refresh()   
-        buttonDebug = tk.Button(self.bottomButtonBar, text="Toggle Debug", command=toggleDebug)
+        column+=1    
+        buttonDebug = tk.Button(self.bottomButtonBar, text="Toggle Debug", command=self.toggleDebug)
         buttonDebug.grid(row=0, column=column, padx=20)   
         #
         # next row with buttons
@@ -114,29 +119,42 @@ class UiApp:
         #Hairpin
         buttonHairpins = tk.Button(self.stepsButtonBar, text="Hairpins", command=lambda:hairpins())
         buttonHairpins.grid(row=0, column=column)   
+        column+=1 
+        #Hairpin
+        indexLabel = tk.Label(self.stepsButtonBar, text="")
+        indexLabel.grid(row=0, column=column)   
+        gl.indexLabel=indexLabel
+
 
     def exitApplication(self):
         self.root.quit()      
 
     def createMenu(self):
-        menuBar = Menu(root)
-        gl.menubar=menuBar
+        self.menuBar = Menu(root)
+        gl.menubar=self.menuBar
         # Left menu: File Load
-        fileMenu = Menu(menuBar, tearoff=0)
+        fileMenu = Menu(self.menuBar, tearoff=0)
+        self.menuBar.add_cascade(label="File", menu=fileMenu)
         fileMenu.add_command(label="Load File", command=lambda:self.loadSequencesHandler())
-        menuBar.add_cascade(label="File", menu=fileMenu)
         fileMenu.add_command(label="Save File", command=lambda:self.saveSequencesHandler())
         # menu: Preferences
-        preferencesMenu = Menu(menuBar, tearoff=0)
+        preferencesMenu = Menu(self.menuBar, tearoff=0)
         preferencesMenu.add_command(label="Preferences", command=self.updatePreferences)
-        menuBar.add_cascade(label="Preferences", menu=preferencesMenu)
+        self.menuBar.add_cascade(label="Preferences", menu=preferencesMenu)
+        # menu: Actions
+        operationsMenu = Menu(self.menuBar, tearoff=0)
+        self.menuBar.add_cascade(label="Operations", menu=operationsMenu)
+        operationsMenu.add_command(label="Denaturate", command=denaturate)
+        operationsMenu.add_command(label="Anneal", command=annealPrimers)
+        operationsMenu.add_command(label="Elongate", command=elongate)
+        operationsMenu.add_command(label="Hairpins", command=hairpins)
         # Right menu: Exit
-        exitMenu = Menu(menuBar, tearoff=0)
+        exitMenu = Menu(self.menuBar, tearoff=0)
         exitMenu.add_command(label="Exit", command=self.exitApplication)
-        menuBar.add_cascade(label="Exit", menu=exitMenu)
-        addDirectMenus(menuBar)
+        self.menuBar.add_cascade(label="Exit", menu=exitMenu)
+        addDirectMenus(self.menuBar)
         # Configuring the root window to use the menu
-        root.config(menu=menuBar)   
+        root.config(menu=self.menuBar)   
 
     def updatePreferences(self):
         gl.prefs.openPreferencesPopup()       

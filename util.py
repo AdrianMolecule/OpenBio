@@ -80,7 +80,7 @@ def drawPrimer(myRec:MySeqRecord, yStart:int)->int:
 		else:
 			xLett=gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize
 		color="white" if not gl.coloredBases else gl.prefs.getPreferenceValue(letter)
-		drawBase(letter, xLett, sequenceYStart,  color=color, font=font, notAnnealedLocation=myRec.notAnnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter,fiveTo3=myRec.fiveTo3)
+		drawBase(letter, xLett, sequenceYStart,  color=color, font=font, notAnnealedLocation=myRec.notAnnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter,fiveTo3=myRec.fiveTo3, myRec=myRec)
 	drawFeatures( myRec, featureYStart,  font, 'pink')
 	# Create labels using the createLabel method
 	eb:EnhancedButton=EnhancedButton(myRec.description[:5], 1, yStart,myRec,  labelHeightPx=bandYEnd-yStart)	
@@ -110,14 +110,14 @@ def drawStrand(myRec:MySeqRecord, yStart:int)->int:
 				color="grey"
 				spamCount+=1
 			if spamCount<=3:# keep 3 letters
-				drawBase(letter,  xLett, sequenceYStart, color=color, font=font,notAnnealedLocation=myRec.notAnnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=myRec.fiveTo3)
+				drawBase(letter,  xLett, sequenceYStart, color=color, font=font,notAnnealedLocation=myRec.notAnnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=myRec.fiveTo3, myRec=myRec)
 		else: # NO SHRINK
 			xLett=gl.canvasLeftPadding + (myRec.xStartOffsetAsLetters+i)*gl.baseRectangleSymbolXPixelSize	
 			if not gl.coloredBases:
 				color="white"
 			else:
 				color =gl.prefs.getPreferenceValue(letter)
-			drawBase(letter,  xLett, sequenceYStart, color=color, font=font, notAnnealedLocation=myRec.notAnnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=myRec.fiveTo3)
+			drawBase(letter,  xLett, sequenceYStart, color=color, font=font, notAnnealedLocation=myRec.notAnnealedLocation, letterIndex=i, upsideDownLetter=upsideDownLetter, fiveTo3=myRec.fiveTo3, myRec=myRec)
 	# Replace the placeholder with the call to the new method
 	drawFeatures(myRec, featureYStart,  font,  "white")		
 	# Create labels using the createLabel method
@@ -190,7 +190,7 @@ def drawTextInRectangle(tex:str,canvas:Canvas, xLeft, yTop, baseRectangleSymbolX
 	# canvas.create_window(x+length*baseRectangleSymbolXPixelSize/2, textpushDown+y, width=length*baseRectangleSymbolXPixelSize+1, height=baseRectangleSymbolYPixelSize+3,  window=upside_down_text)
 	
 # Define functions to draw each DNA base x,y relative from upper 	left corner
-def drawBase(base:str, x, y, color, font, notAnnealedLocation:tuple[int,int]=None, letterIndex:int=0,upsideDownLetter=None, fiveTo3=None):
+def drawBase(base:str, x, y, color, font, notAnnealedLocation:tuple[int,int]=None, letterIndex:int=0,upsideDownLetter=None, fiveTo3=None, myRec=None):
 	gl.canvas.create_rectangle( x, y, x + gl.baseRectangleSymbolXPixelSize ,y + gl.baseRectangleSymbolYPixelSize , fill=color, outline="black" )
 	if upsideDownLetter:
 		textId=gl.canvas.create_text(x+gl.baseRectangleSymbolXPixelSize/2, y+gl.baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black", angle=180)			
@@ -198,7 +198,10 @@ def drawBase(base:str, x, y, color, font, notAnnealedLocation:tuple[int,int]=Non
 		textId=gl.canvas.create_text(x+gl.baseRectangleSymbolXPixelSize/2, y+gl.baseRectangleSymbolYPixelSize/2+1 , text=base, font=font, fill="black")
 	if gl.hydrogen and (notAnnealedLocation==None or (letterIndex<notAnnealedLocation[0] or letterIndex>notAnnealedLocation[1])):
 		drawHydrogenBondLines( base, x+1,y + gl.baseRectangleSymbolYPixelSize+1, fiveTo3, color)
-	gl.canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, gl.canvas, None))
+	# gl.canvas.tag_bind(textId, "<Button-1>", lambda event: clickOnSeqRecord(event, gl.canvas, mySeqRecord=myRec))
+	gl.canvas.tag_bind(textId, "<Enter>",  lambda event:HoverOverSeqRecord(event, gl.canvas, mySeqRecord=myRec))
+	gl.canvas.tag_bind(textId, "<Leave>",  lambda event:HoverOutOverSeqRecord(event, gl.canvas, mySeqRecord=myRec))
+
 
 def drawHydrogenBondLines( base:str, x: int, topY: int, fiveTo3, color)->int:#y is always top
 	lineHalfLength = gl.hydrogenLinesHalfLength-1  # Length of each vertical line
@@ -234,6 +237,8 @@ def drawHydrogenBondLines( base:str, x: int, topY: int, fiveTo3, color)->int:#y 
 
 def buildMask():# cell is True is visible
 	# for rec in Model.modelInstance.sequenceRecordList:
+	if not Model.modelInstance:
+		return
 	size: int= max(((len(rec.seq)+rec.xStartOffsetAsLetters) for rec in  Model.modelInstance.sequenceRecordList), default=0)
 	
 	gl.mask=[0] * size
@@ -438,8 +443,9 @@ def drawRulerAndMask( yStart)->int:
 			x+=	gl.baseRectangleSymbolXPixelSize
 	return yStart+4*gl.baseRectangleSymbolYPixelSize		
 
-
 def refresh():
+	if Model.modelInstance==None:
+		return	
 	Preferences.updateGlobalCache()	
 	buildMask()
 	gl.canvasLeft.delete("all")
@@ -489,6 +495,8 @@ def addPrimer(filePath=None)->Seq:
 	# Model.modelInstance.appendSequenceRecord(newSequenceRecord=MySeqRecord(seq=Seq(data="GATATAT"),id="AdrianShortSeq", name="AdrianSecondSeqName"))
 
 def annealPrimers(annealForLoops:bool=False): # anneal only if the annealed primer can be elongated. This option is not good for determining loops as loops need to be shown even if there is no elongation possible
+	if not Model.modelInstance:
+		return
 	found:list= list()
 	added:bool=False
 	for p, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
@@ -585,6 +593,8 @@ def workflow():
 	None
 
 def hairpins(anneal=True):# anneal False is just for debug purpose only
+	if not Model.modelInstance:
+		return
 	if not Model.modelInstance.sequenceRecordList or  len(Model.modelInstance.sequenceRecordList)!=1:
 		if len(Model.modelInstance.sequenceRecordList)!=2 or Model.modelInstance.sequenceRecordList[0].loopInfo==None or Model.modelInstance.sequenceRecordList[1].loopInfo==None or Model.modelInstance.sequenceRecordList[0].loopInfo[1].uniqueId !=Model.modelInstance.sequenceRecordList[1].uniqueId:
 			messagebox.showerror("More than one sequence or 2 unrelated sequences", f"Hairpin analisys is done on only one unannealed sequence and we have { len(Model.modelInstance.sequenceRecordList)} sequences") 
@@ -650,6 +660,8 @@ def xxx():
 	None        
 
 def elongate():#todo elongate when going left should change the noAnealed region index by the number of letters elongated
+	if not Model.modelInstance:
+		return	
 	found:bool=False
 	for i, sequenceRecordPrimer in enumerate(Model.modelInstance.sequenceRecordList):
 		sequenceRecordPrimer:MySeqRecord
@@ -729,6 +741,8 @@ def deleteFirstSequenceFromModel():# only one so no indexing errors are created
 			break	
 
 def denaturate( ):
+	if not Model.modelInstance:
+		return
 	for sequenceRecord in Model.modelInstance.sequenceRecordList:
 		sequenceRecord:MySeqRecord
 		sequenceRecord.hybridizedToStrand=None
@@ -772,7 +786,7 @@ def clickOnSeqRecordToDelete( event: tk.Event, mySeqRecord:MySeqRecord) -> None:
 	deleteSequenceFromModel(mySeqRecord.uniqueId)
 
 
-def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
+def HoverOverSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
 	# Get the coordinates of the click
 	x, y = event.x, event.y
 	button:EnhancedButton=event.widget
@@ -784,18 +798,22 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
 		# If the click is within the bounding box, calculate the letter clicked
 		if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
 			# Find the character index in the text that was clicked
-			char_index = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
-			clicked_char = text[char_index]
+			charIndex = int((x - bbox[0]) / (bbox[2] - bbox[0]) * len(text))
+			# clickedChar = text[charIndex]
 			screenIndex=(x-gl.canvasLeftPadding)/gl.baseRectangleSymbolXPixelSize
-			print(f" Clicked character: '{clicked_char}' at index {screenIndex} where should be {mySeqRecord._seq[int(screenIndex)]}")
-	else:
-			print(f"Action 1 was not over a character")
+			gl.indexLabel.config(text=f"{mySeqRecord.description} {int(screenIndex)}")
+			# print(f"'{clickedChar}' at zero based index {int(screenIndex)} on sequence {mySeqRecord.description} on {mySeqRecord.seq[int(screenIndex)]}")
+	# else:
+	# 		print(f"Click 1 was not over a symbol")
 	# for i,r in enumerate(Model.modelInstance.sequenceRecordList):
 	#     r:MySeqRecord
 	#     if r.uniqueId ==mySeqRecord.uniqueId:
 	#         Model.modelInstance.sequenceRecordList.pop(i)
 	#         # print(f"the clicked sequence is found{r.uniqueId}")#         drawCanvas(canvas)
 	#         break
+
+def HoverOutOverSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
+	gl.indexLabel.config(text="")
 
 # def clickOnSeqRecordToDisplayInfo( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -> None:
 #     # Get the coordinates of the click
@@ -827,16 +845,24 @@ def clickOnSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqRecord) -
     #     print(f"Error in {func} at {filename}:{line} - {text}")
 
 def addDirectMenus(menuBar):
-	menuBar.add_command(label="testLoadPorkDenaturate", command=testLoadPorkDenaturate)
-	menuBar.add_command(label="testFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
-	menuBar.add_command(label="testFullNoHairStartWithB1cB2", command=testFullNoHairStartWithB1cB2)
-	# menuBar.add_command(label="testB1B2partial", command=testB1B2partial)
-	menuBar.add_command(label="pCRsample", command=pCRsample)
-	menuBar.add_command(label="testLeftLoopSplit", command=testLeftLoopSplit)
-	menuBar.add_command(label="testRightLoopSplit", command=testRightLoopSplit)
-	menuBar.add_command(label="testLoopAnneal", command=testLoopAnneal)
-	# menuBar.add_command(label="testFeatureLabelBug", command=testFeatureLabelBug)
-	# menuBar.add_command(label="testF1F2all", command=testF1F2all)
+	if gl.debug:
+		menuBar.add_command(label="TestLoadPorkDenaturate", command=testLoadPorkDenaturate)
+		menuBar.add_command(label="TestFullNoHairStartWithF1cF2", command=testFullNoHairStartWithF1cF2)
+		menuBar.add_command(label="TestFullNoHairStartWithB1cB2", command=testFullNoHairStartWithB1cB2)
+		# menuBar.add_command(label="testB1B2partial", command=testB1B2partial)
+		menuBar.add_command(label="PCRsample", command=pCRsample)
+		menuBar.add_command(label="TestLeftLoopSplit", command=testLeftLoopSplit)
+		menuBar.add_command(label="TestRightLoopSplit", command=testRightLoopSplit)
+		menuBar.add_command(label="TestLoopAnneal", command=testLoopAnneal)
+		# menuBar.add_command(label="testFeatureLabelBug", command=testFeatureLabelBug)
+		# menuBar.add_command(label="testF1F2all", command=testF1F2all)
+
+def removeDirectMenus(menuBar):
+    m = menuBar.index(tk.END)  # Get the index of the last item
+    for i in range(m, 4, -1):
+        menuBar.delete(i)
+					  
+
 
 def getFullPath(relativeFileName:str):	
 	return gl.basePath+"/"+relativeFileName

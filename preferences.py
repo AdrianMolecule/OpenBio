@@ -220,6 +220,7 @@ class Preferences:
             "ruler":                    Preference("ruler", bool, True, convertToBool, " draws coordinates for elements"),
             "leftButtonsWidth":         Preference("leftButtonsWidth", int, 16, int, " width on show info butttons on the left"),
             "format":                   Preference( "format", str, "GenBank,genbank,gb",  str,"specify the format as format description, precise format name, format extension. Need to be precise, no spaces"),
+            "debug":                    Preference( "debug", bool, False,  convertToBool,"shows debug info"),
         }
         return p
 
@@ -243,6 +244,7 @@ class Preferences:
         gl.c=gl.prefs.getPreferenceValue(preference_name="C")
         gl.g=gl.prefs.getPreferenceValue(preference_name="G")
         gl.t=gl.prefs.getPreferenceValue(preference_name="T")
+        gl.debug=gl.prefs.getPreferenceValue(preference_name="debug")
 
     def dump(self):
         for key, p in self.preferences.items():

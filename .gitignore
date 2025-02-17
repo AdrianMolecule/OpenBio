@@ -3,7 +3,7 @@ __pycache__/*
 beforeMakDNAPrinting.zip
 samples/*
 build/*
-dist/*
+
 main.spec
 requirements.txt
 main.exe

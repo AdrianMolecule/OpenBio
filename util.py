@@ -1,6 +1,7 @@
 from copy import deepcopy
 import math
 from multiprocessing import log_to_stderr
+from re import S
 from tkinter import Canvas, Button
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
@@ -15,6 +16,7 @@ from PIL import ImageGrab
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from Bio import SeqIO
+from Bio import Restriction
 import time
 from Bio.SeqFeature import SeqFeature, SimpleLocation, CompoundLocation, ExactPosition, BeforePosition, AfterPosition, UnknownPosition, Location
 # mine
@@ -707,6 +709,93 @@ def elongate():#todo elongate when going left should change the noAnealed region
 		messagebox.showerror("Not found", "No primer ready to elongate") 
 	refresh()   
 
+
+def virtualGel():
+	# Define the DNA sequence
+	seq:Seq = None
+	for i,myRec in enumerate(Model.modelInstance.sequenceRecordList):
+		myRec:MySeqRecord
+		if not myRec.isPrimer:
+			if not seq:
+				seq = myRec.seq
+			else:
+				messagebox.showerror("More than one sequence", f" A gel can be done on only one sequence and this one contains more") 
+				return
+	if not seq:
+		messagebox.showerror("No Sequences", f" A gel needs a sequence that is not a primer") 
+		return
+	# Define the EcoRI recognition site
+	# ecoRI_site = "GAATTC"
+	# Create a Bio.Restriction.RestrictionBatch object
+	batch = Restriction.RestrictionBatch([Restriction.EcoRI ])
+	cutSites = batch.search(seq)
+	# cutSites:dict[, ] = batch.search(seq)
+	# cutSites = batch.search(seq)
+
+	# Print the results
+	for cutSite in cutSites:
+		for result in cutSite.results:
+			print(f"EcoRI cuts at position {result} in the sequence.")
+	locations:list[int]=list()
+	for cutSite in cutSites:
+		for result in cutSite.results:	
+			# assume circular first cut is one line of len(seq)		
+			locations.append(result)
+	locations.sort()
+	if(len(locations)==0):
+		messagebox.showerror("No cut locations", f" This sequence does not contain any cut sites") 
+		return
+	segmentLenghts=list()
+	if(len(locations)==1):
+		segmentLenghts.append(len(seq))
+	else:
+		for i, l in enumerate(locations[1:]):
+			segmentLenghts.append(locations(locations[i]-locations[i-1]))
+		segmentLenghts.append(locations[0]+(len(locations)-locations[-1]))
+	for s in segmentLenghts:
+		print(f"segment {s} ")	
+	segmentLenghts.sort()
+	segmentLenghts=list(set(segmentLenghts))# deduplication
+	neb_2_Log=("NEB 2-Log",[100,200,300,400,500,600,700,800,900,1000,1200,1500,2000, 3000, 4000,5000,6000])
+	segmentLenghts=[50,150,350]
+	virtualGelPopup(seq,  segmentLenghts, neb_2_Log)
+
+
+	# PyElph https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-13-9
+def virtualGelPopup(seq, segmentLengths:list, ladder):
+	popup = tk.Toplevel(gl.root)
+	popup.title("Virtual Gel")
+	popup.geometry("600x1000")
+	# Create a frame for the canvas and scrollbar
+	frame = tk.Frame(popup)
+	frame.pack(fill=tk.BOTH, expand=True)
+	# Create a canvas
+	canvas = tk.Canvas(frame)
+	canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+	# Create a scrollbar
+	scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
+	scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+	# Configure the canvas to work with the scrollbar
+	canvas.configure(yscrollcommand=scrollbar.set)
+	# Create a frame inside the canvas to hold the content
+	contentFrame = tk.Frame(canvas)
+	canvas.create_window((0, 0), window=contentFrame, anchor="nw")
+	maxTextWidth = 50
+	bandWidth=30
+	logBase = 10# Define the base for the logarithmic scale (e.g., base 10)
+	maxCanvasHeight = 860# Define the maximum height of the canvas
+	maxLogHeight = math.log(max(ladder[1]), logBase)# Find the maximum logarithmic height for scaling
+	scaleFactor = maxCanvasHeight / maxLogHeight# Define a scaling factor to fit the maximum log-transformed height to maxCanvasHeight
+	# Draw each rectangle along the X-axis, transformed by log scale on Y-axis
+	for i, height in enumerate(iterable=ladder[1]):				
+		logHeight = math.log(height, logBase) * scaleFactor# Logarithmic transformation for the height
+		y = maxCanvasHeight - logHeight  # Y position, subtracted to flip the log height (higher values go down)
+		canvas.create_text(10, y, anchor="w", text=str(height).rjust(6))
+		canvas.create_line(10+maxTextWidth, y, 10+maxTextWidth+bandWidth, y, width=2)  # Line 1
+		# canvas.create_line(150+maxTextWidth, y, 250+maxTextWidth, y, width=2)  # Line 1
+	contentFrame.update_idletasks()
+	canvas.config(scrollregion=canvas.bbox("all"))
+
 def deleteSequenceFromModel(uniqueId:int):# only one so no indexing errors are created
 	for i,myRec in enumerate(Model.modelInstance.sequenceRecordList):
 		myRec:MySeqRecord
@@ -721,6 +810,8 @@ def deleteSequenceFromModel(uniqueId:int):# only one so no indexing errors are c
 				myRec.hybridizedToStrand.singleStranded=True              
 			Model.modelInstance.sequenceRecordList.pop(i)#deletion happens here
 			# print(f"the clicked sequence is found{r.uniqueId}")
+			# TODO change the remaining sequence to singleStranded by setting the proper header like 	LOCUS       F3primer                  20 bp ss-DNA     linear   SYN 01-FEB-2025
+			# so put ss-DNA instead of DNA
 			refresh()
 			break	
 
@@ -840,9 +931,9 @@ def HoverOutOverSeqRecord( event: tk.Event, canvas:Canvas, mySeqRecord:MySeqReco
 #             drawCanvas(canvas)
 #             break
 	# import traceback
-    # tb = traceback.extract_tb(e.__traceback__)
-    # for filename, line, func, text in tb:
-    #     print(f"Error in {func} at {filename}:{line} - {text}")
+	# tb = traceback.extract_tb(e.__traceback__)
+	# for filename, line, func, text in tb:
+	#     print(f"Error in {func} at {filename}:{line} - {text}")
 
 def addDirectMenus(menuBar):
 	if gl.debug:
@@ -858,9 +949,9 @@ def addDirectMenus(menuBar):
 		# menuBar.add_command(label="testF1F2all", command=testF1F2all)
 
 def removeDirectMenus(menuBar):
-    m = menuBar.index(tk.END)  # Get the index of the last item
-    for i in range(m, 4, -1):
-        menuBar.delete(i)
+	m = menuBar.index(tk.END)  # Get the index of the last item
+	for i in range(m, 4, -1):
+		menuBar.delete(i)
 					  
 
 

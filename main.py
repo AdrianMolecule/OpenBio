@@ -2,6 +2,7 @@ import tkinter as tk
 from util import *
 import gl
 from preferences import Preferences
+#  CTRL SHIFT P indent  
 
 class UiApp:
 
@@ -25,7 +26,7 @@ class UiApp:
         self.root.grid_columnconfigure(1, weight=1)
     
     def createLeftCanvasForEnhancedBottons(self):
-        self.canvasLeft = tk.Canvas(root, width=gl.prefs.getPreferenceValue("leftButtonsWidth"), height=gl.canvasHeight, bg='lightblue')   
+        self.canvasLeft = tk.Canvas(gl.root, width=gl.prefs.getPreferenceValue("leftButtonsWidth"), height=gl.canvasHeight, bg='lightblue')   
         self.canvasLeft.grid(row=0, column=0, padx=0, pady=0, sticky="nw")
         gl.canvasLeft=self.canvasLeft
 
@@ -130,7 +131,7 @@ class UiApp:
         self.root.quit()      
 
     def createMenu(self):
-        self.menuBar = Menu(root)
+        self.menuBar = Menu(gl.root)
         gl.menubar=self.menuBar
         # Left menu: File Load
         fileMenu = Menu(self.menuBar, tearoff=0)
@@ -148,13 +149,19 @@ class UiApp:
         operationsMenu.add_command(label="Anneal", command=annealPrimers)
         operationsMenu.add_command(label="Elongate", command=elongate)
         operationsMenu.add_command(label="Hairpins", command=hairpins)
+        # menu: Enzymes
+        enzymeMenu = Menu(self.menuBar, tearoff=0)
+        self.menuBar.add_cascade(label="Enzymes", menu=enzymeMenu)
+        # enzymeMenu.add_command(label="Select Enzyme Set", command=selectEnzymeSet)
+        # enzymeMenu.add_command(label="Toggle Enzyme Visibility", command=toggleEnzymes)
+        enzymeMenu.add_command(label="VirtualGel", command=virtualGel)
         # Right menu: Exit
         exitMenu = Menu(self.menuBar, tearoff=0)
         exitMenu.add_command(label="Exit", command=self.exitApplication)
         self.menuBar.add_cascade(label="Exit", menu=exitMenu)
         addDirectMenus(self.menuBar)
         # Configuring the root window to use the menu
-        root.config(menu=self.menuBar)   
+        gl.root.config(menu=self.menuBar)   
 
     def updatePreferences(self):
         gl.prefs.openPreferencesPopup()       
@@ -197,8 +204,8 @@ class UiApp:
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = UiApp(root)
+    gl.root = tk.Tk()
+    app = UiApp(gl.root)
     
 # works with # works with pyinstaller --add-data "samples/;samples" t.py
 #pyinstaller --noconfirm --onefile main.py --console --add-data "samples/;samples"
@@ -228,4 +235,4 @@ if __name__ == "__main__":
             # annealPrimers()
             # elongate()
             #loopPrep()
-    root.mainloop()
+    gl.root.mainloop()

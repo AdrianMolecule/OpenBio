@@ -5,6 +5,7 @@ from preferences import *
 prefs:Preferences=None
 canvasLeft:Canvas=None
 canvas:Canvas=None
+root=None
 #
 canvasLeftPadding=None # blank space from the left edge of canvas
 canvas=None # blank space from the left edge of canvas

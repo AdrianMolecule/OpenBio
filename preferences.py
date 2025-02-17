@@ -198,7 +198,7 @@ class Preferences:
                 raise ValueError("Invalid boolean value")
         # 
         p:dict[str,Preference] = {
-            "defaultTestFileValue":     Preference("defaultTestFileValue", str,"", str,"Path to the default file"),
+            "defaultTestFileValue":     Preference("defaultTestFileValue", str,"/samples/fugfp.gb", str,"Path to the default file"),
             "canvasLeftPadding":   Preference("canvasLeftPadding", int,  10, int,"Horizontal margin for the canvas"),
             "fontName":                 Preference("fontName", str, "Arial",  str,"Font type for the canvas"),
             "fontSize":                 Preference("fontSize", int, 10, int,"Font type for the canvas"),

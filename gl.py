@@ -2,6 +2,7 @@ from  tkinter import Canvas
 from enhancedbutton import EnhancedButton
 from preferences import *
 
+
 prefs:Preferences=None
 canvasLeft:Canvas=None
 canvas:Canvas=None
@@ -34,3 +35,4 @@ t=None
 basePath=None
 debug=False
 gl.indexLabel=None
+

@@ -727,7 +727,8 @@ def virtualGel():
 	# Define the EcoRI recognition site
 	# ecoRI_site = "GAATTC"
 	# Create a Bio.Restriction.RestrictionBatch object
-	batch = Restriction.RestrictionBatch([Restriction.EcoRI ])
+	# batch = Restriction.RestrictionBatch([Restriction.EcoRI ])
+	batch = Restriction.RestrictionBatch([Restriction.HindIII ])
 	cutSites = batch.search(seq)
 	# cutSites:dict[, ] = batch.search(seq)
 	# cutSites = batch.search(seq)
@@ -749,15 +750,16 @@ def virtualGel():
 	if(len(locations)==1):
 		segmentLenghts.append(len(seq))
 	else:
-		for i, l in enumerate(locations[1:]):
-			segmentLenghts.append(locations(locations[i]-locations[i-1]))
-		segmentLenghts.append(locations[0]+(len(locations)-locations[-1]))
+		for i, l in enumerate(locations):
+			if(i==0):
+				continue
+			segmentLenghts.append((locations[i]-locations[i-1]))
+		segmentLenghts.append(locations[0]+(len(seq)-locations[-1]))
 	for s in segmentLenghts:
 		print(f"segment {s} ")	
 	segmentLenghts.sort()
 	segmentLenghts=list(set(segmentLenghts))# deduplication
 	neb_2_Log=("NEB 2-Log",[100,200,300,400,500,600,700,800,900,1000,1200,1500,2000, 3000, 4000,5000,6000])
-	segmentLenghts=[50,150,350]
 	virtualGelPopup(seq,  segmentLenghts, neb_2_Log)
 
 
@@ -765,7 +767,7 @@ def virtualGel():
 def virtualGelPopup(seq, segmentLengths:list, ladder):
 	popup = tk.Toplevel(gl.root)
 	popup.title("Virtual Gel")
-	popup.geometry("600x1000")
+	popup.geometry("600x860")
 	# Create a frame for the canvas and scrollbar
 	frame = tk.Frame(popup)
 	frame.pack(fill=tk.BOTH, expand=True)
@@ -780,18 +782,33 @@ def virtualGelPopup(seq, segmentLengths:list, ladder):
 	# Create a frame inside the canvas to hold the content
 	contentFrame = tk.Frame(canvas)
 	canvas.create_window((0, 0), window=contentFrame, anchor="nw")
-	maxTextWidth = 50
+	maxTextWidth = 40
 	bandWidth=30
+	spaceBetweenBands=10
+
 	logBase = 10# Define the base for the logarithmic scale (e.g., base 10)
+	xStartLadderLine=spaceBetweenBands+maxTextWidth
+	xStartLadderText=spaceBetweenBands
+	xStartLane1SegmentLine=spaceBetweenBands+maxTextWidth+bandWidth+spaceBetweenBands
+	xStartLane1Text=spaceBetweenBands+maxTextWidth+bandWidth+spaceBetweenBands+bandWidth+spaceBetweenBands
+	text="Ladder"
+	canvas.create_text(xStartLadderLine, gl.baseRectangleSymbolYPixelSize/2 , text=text, font=gl.fontName, fill="black")		
+	text="Lane 1"
+	canvas.create_text(xStartLane1SegmentLine+len(text)/2*gl.baseRectangleSymbolXPixelSize, gl.baseRectangleSymbolYPixelSize/2 , text=text, font=gl.fontName, fill="black")		
 	maxCanvasHeight = 860# Define the maximum height of the canvas
 	maxLogHeight = math.log(max(ladder[1]), logBase)# Find the maximum logarithmic height for scaling
 	scaleFactor = maxCanvasHeight / maxLogHeight# Define a scaling factor to fit the maximum log-transformed height to maxCanvasHeight
 	# Draw each rectangle along the X-axis, transformed by log scale on Y-axis
-	for i, height in enumerate(iterable=ladder[1]):				
+	for i, height in enumerate(iterable=ladder[1]):			#draw ladder values	
 		logHeight = math.log(height, logBase) * scaleFactor# Logarithmic transformation for the height
-		y = maxCanvasHeight - logHeight  # Y position, subtracted to flip the log height (higher values go down)
-		canvas.create_text(10, y, anchor="w", text=str(height).rjust(6))
-		canvas.create_line(10+maxTextWidth, y, 10+maxTextWidth+bandWidth, y, width=2)  # Line 1
+		y = maxCanvasHeight - logHeight +2* gl.baseRectangleSymbolYPixelSize # Y position, subtracted to flip the log height (higher values go down)
+		canvas.create_text(xStartLadderText, y, anchor="w", text=str(height).rjust(6))
+		canvas.create_line(xStartLadderLine, y, spaceBetweenBands+maxTextWidth+bandWidth, y, width=2)  # Line 1
+	for i, height in enumerate(segmentLengths)	: #draw ladder values
+		logHeight = math.log(height, logBase) * scaleFactor# Logarithmic transformation for the height
+		y = maxCanvasHeight - logHeight +2* gl.baseRectangleSymbolYPixelSize  # Y position, subtracted to flip the log height (higher values go down)
+		canvas.create_line(xStartLane1SegmentLine, y, spaceBetweenBands+maxTextWidth+bandWidth+spaceBetweenBands+bandWidth, y, width=2)  # Line 1
+		canvas.create_text(xStartLane1Text, y, anchor="w", text=str(height).rjust(6))
 		# canvas.create_line(150+maxTextWidth, y, 250+maxTextWidth, y, width=2)  # Line 1
 	contentFrame.update_idletasks()
 	canvas.config(scrollregion=canvas.bbox("all"))

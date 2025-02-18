@@ -230,6 +230,7 @@ if __name__ == "__main__":
             updateModel(seqRecList, filePath=filePath)
             app.root.title("OpenBio "+Model.modelInstance.loadedFileName)
             refresh() 
+            virtualGel()
             # addPrimer(filePath=str(Path(__file__).resolve().parent)+"/samples/F1CF2.gb")  
             # denaturate()
             # annealPrimers()
